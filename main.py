@@ -12,36 +12,51 @@ import keras
 import tensorflow as tf
 #from tensorflow.keras.applications.resnet import ResNet
 from tvm import auto_scheduler
-from tensorflow.python.client import device_lib
-
-print(device_lib.list_local_devices())
 from keras.datasets import cifar10
-(x_train, y_train), (x_test, y_test) = cifar10.load_data() #(num_samples, 32, 32, 3)
 print(len(tf.config.experimental.list_physical_devices('GPU')))
-model = ResNet50(
-    include_top=True,
-    weights=None,
-    input_tensor=None,
-    input_shape=(32, 32, 3),
-    pooling=None,
-    classes=10,
-)
-#
+
+(x_train, y_train), (x_test, y_test) = cifar10.load_data() #(num_samples, 32, 32, 3)
+y_train = to_categorical(y_train)
+y_test = to_categorical(y_test)
+
+# model = ResNet50(
+#     include_top=True,
+#     weights=None,
+#     input_tensor=None,
+#     input_shape=(32, 32, 3),
+#     pooling=None,
+#     classes=10,
+# )
+
 # model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
 # model.summary()
-# y_train = to_categorical(y_train)
-# y_test = to_categorical(y_test)
-# model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=100)
-model.save("restnet50_cifar10.h5")
-model = keras.models.load_model("restnet50_cifar10.h5")
-
-
+# model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=1)
+# model.save("resnet50_cifar10.h5")
+model = keras.models.load_model("resnet50_cifar10.h5")
+print("Prediction: ", np.argmax(model.predict(x_train[:50]), axis=1))
+print("Labels:     ", np.argmax(y_train[:50], axis=1))
 
 print("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")
 input_shape = [1, 32, 32, 3] # [batch, height, width, channels]
 shape_dict = {"input_input": input_shape}
 mod, params = relay.frontend.from_keras(model, shape_dict, layout="NHWC")
 print(mod)
+
+
+target = tvm.target.Target("llvm  -mcpu=core-avx2")
+dev = tvm.cpu(0)
+
+with tvm.transform.PassContext(opt_level=3): #проводим тесты над нейросетью в tvm //    tvm_model(data.reshape(1, 28, 28, 1)).numpy()[0]
+    tvm_model = relay.build_module.create_executor("graph", mod, dev, target, params).evaluate()
+
+out = []
+for data in x_test[:30]:
+    # HWC -> NHWC
+    out.append(tvm_model(data.reshape(1, 32, 32, 3)).numpy()[0]) #проводим тесты над нейросетью в tvm //    tvm_model(data.reshape(1, 28, 28, 1)).numpy()[0]
+
+print("Prediction: ", np.argmax(out, axis=1))
+print("Labels:     ", np.argmax(y_test[:30], axis=1))
+
 def evaluate_performance(lib, data_shape, dtype="float32"):
     # upload parameters to device
     dev = tvm.cpu()

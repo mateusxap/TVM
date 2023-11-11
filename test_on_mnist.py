@@ -167,8 +167,8 @@ def evaluate(module, data_shape, log_file, target="llvm"):
             lib = relay.build(module, target=target, params=params)
         evaluate_performance(lib, data_shape)
 
-
-evaluate(mod, input_shape, log_file, target)
+for i in range(1, 10):
+    evaluate(mod, input_shape, log_file, target)
 
 print("||||||||||||||||||||||||||||||||||||||||||run on opt neural network||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")
 with auto_scheduler.ApplyHistoryBest(log_file):
@@ -221,15 +221,16 @@ def collect_per_layer_stat(lib, device, json_graph=None):
     debug_module.run(number=10, repeat=3)
 
 print("auto_scheduler")
-
-collect_per_layer_stat(lib,dev)
+for i in range(1, 10):
+    collect_per_layer_stat(lib,dev)
 
 print("default")
 with tvm.transform.PassContext(opt_level=3):
     print("Compile...")
     libDefault = relay.build(mod, target=target, params=params)
 
-collect_per_layer_stat(libDefault,dev)
+for i in range(1,10):
+    collect_per_layer_stat(libDefault,dev)
 
 print("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")
 
