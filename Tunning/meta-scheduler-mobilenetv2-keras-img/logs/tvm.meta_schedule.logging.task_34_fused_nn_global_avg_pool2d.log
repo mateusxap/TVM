@@ -1,0 +1,288 @@
+2024-05-21 12:50:22 [INFO] [task_scheduler.cc:160] Initializing Task #34: "fused_nn_global_avg_pool2d"
+2024-05-21 12:50:22 [INFO] [task_scheduler.cc:35] 
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(p0: T.Buffer((T.int64(1), T.int64(7), T.int64(7), T.int64(1280)), "float32"), adaptive_pool_avg: T.Buffer((T.int64(1), T.int64(1), T.int64(1), T.int64(1280)), "float32")):
+        T.func_attr({"tir.noalias": T.bool(True)})
+        # with T.block("root"):
+        adaptive_pool_sum = T.alloc_buffer((T.int64(1), T.int64(1), T.int64(1), T.int64(1280)))
+        for ax0, ax1, ax2, ax3, rv0, rv1 in T.grid(T.int64(1), T.int64(1), T.int64(1), T.int64(1280), T.int64(7), T.int64(7)):
+            with T.block("adaptive_pool_sum"):
+                v_ax0, v_ax1, v_ax2, v_ax3, v_rv0, v_rv1 = T.axis.remap("SSSSRR", [ax0, ax1, ax2, ax3, rv0, rv1])
+                T.reads(p0[v_ax0, v_ax1 * T.int64(7) + v_rv0, v_ax2 * T.int64(7) + v_rv1, v_ax3])
+                T.writes(adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3])
+                with T.init():
+                    adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] = T.float32(0)
+                adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] = adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] + p0[v_ax0, v_ax1 * T.int64(7) + v_rv0, v_ax2 * T.int64(7) + v_rv1, v_ax3]
+        for ax0, ax1, ax2, ax3 in T.grid(T.int64(1), T.int64(1), T.int64(1), T.int64(1280)):
+            with T.block("adaptive_pool_avg"):
+                v_ax0, v_ax1, v_ax2, v_ax3 = T.axis.remap("SSSS", [ax0, ax1, ax2, ax3])
+                T.reads(adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3])
+                T.writes(adaptive_pool_avg[v_ax0, v_ax1, v_ax2, v_ax3])
+                T.block_attr({"schedule_rule": "meta_schedule.adaptive_pool_avg"})
+                adaptive_pool_avg[v_ax0, v_ax1, v_ax2, v_ax3] = adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] * T.float32(0.020408163265306121)
+2024-05-21 12:50:22 [INFO] [task_scheduler.cc:164] Total 3 design space(s) generated
+2024-05-21 12:50:22 [INFO] [task_scheduler.cc:170] Design space #0:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(p0: T.Buffer((T.int64(1), T.int64(7), T.int64(7), T.int64(1280)), "float32"), adaptive_pool_avg: T.Buffer((T.int64(1), T.int64(1), T.int64(1), T.int64(1280)), "float32")):
+        T.func_attr({"tir.noalias": T.bool(True)})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 96, "meta_schedule.unroll_explicit": 512, "meta_schedule.vectorize": 64})
+            adaptive_pool_sum = T.alloc_buffer((T.int64(1), T.int64(1), T.int64(1), T.int64(1280)))
+            adaptive_pool_sum_rf = T.alloc_buffer((T.int64(1), T.int64(1), T.int64(1), T.int64(1280), T.int64(49)))
+            for ax0, ax1, ax2, ax3 in T.grid(T.int64(1), T.int64(1), T.int64(1), T.int64(1280)):
+                for ax0_1 in range(T.int64(49)):
+                    for ax0_2, ax1_1, ax2_1, ax3_1, ax4, ax5 in T.grid(T.int64(1), T.int64(1), T.int64(1), T.int64(1), T.int64(1), T.int64(1)):
+                        with T.block("adaptive_pool_sum_rf"):
+                            vrv0_rv1_fused_0 = T.axis.spatial(T.int64(49), ax0_1 + ax0_2)
+                            v_ax0, v_ax1, v_ax2 = T.axis.remap("SSS", [ax1_1, ax2_1, ax3_1])
+                            v_ax3 = T.axis.spatial(T.int64(1280), ax3 + ax4)
+                            vrv0_rv1_fused_1 = T.axis.reduce(T.int64(1), ax5)
+                            T.reads(p0[v_ax0, v_ax1 * T.int64(7) + (vrv0_rv1_fused_0 + vrv0_rv1_fused_1) // T.int64(7), v_ax2 * T.int64(7) + (vrv0_rv1_fused_0 + vrv0_rv1_fused_1) % T.int64(7), v_ax3])
+                            T.writes(adaptive_pool_sum_rf[v_ax0, v_ax1, v_ax2, v_ax3, vrv0_rv1_fused_0])
+                            with T.init():
+                                adaptive_pool_sum_rf[v_ax0, v_ax1, v_ax2, v_ax3, vrv0_rv1_fused_0] = T.float32(0)
+                            adaptive_pool_sum_rf[v_ax0, v_ax1, v_ax2, v_ax3, vrv0_rv1_fused_0] = adaptive_pool_sum_rf[v_ax0, v_ax1, v_ax2, v_ax3, vrv0_rv1_fused_0] + p0[v_ax0, v_ax1 * T.int64(7) + (vrv0_rv1_fused_0 + vrv0_rv1_fused_1) // T.int64(7), v_ax2 * T.int64(7) + (vrv0_rv1_fused_0 + vrv0_rv1_fused_1) % T.int64(7), v_ax3]
+                    for ax1_1, ax2_1, ax3_1, ax4 in T.grid(T.int64(1), T.int64(1), T.int64(1), T.int64(1)):
+                        with T.block("adaptive_pool_sum"):
+                            vrv0_rv1_fused_0, v_ax0, v_ax1, v_ax2 = T.axis.remap("RSSS", [ax0_1, ax1_1, ax2_1, ax3_1])
+                            v_ax3 = T.axis.spatial(T.int64(1280), ax3 + ax4)
+                            T.reads(adaptive_pool_sum_rf[v_ax0, v_ax1, v_ax2, v_ax3, vrv0_rv1_fused_0])
+                            T.writes(adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3])
+                            with T.init():
+                                adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] = T.float32(0)
+                            adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] = adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] + adaptive_pool_sum_rf[v_ax0, v_ax1, v_ax2, v_ax3, vrv0_rv1_fused_0]
+                with T.block("adaptive_pool_avg"):
+                    v_ax0, v_ax1, v_ax2, v_ax3 = T.axis.remap("SSSS", [ax0, ax1, ax2, ax3])
+                    T.reads(adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3])
+                    T.writes(adaptive_pool_avg[v_ax0, v_ax1, v_ax2, v_ax3])
+                    adaptive_pool_avg[v_ax0, v_ax1, v_ax2, v_ax3] = adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] * T.float32(0.020408163265306121)
+b0 = sch.get_block(name="adaptive_pool_sum", func_name="main")
+b1 = sch.get_block(name="adaptive_pool_avg", func_name="main")
+b2 = sch.get_block(name="root", func_name="main")
+sch.unannotate(block_or_loop=b1, ann_key="schedule_rule")
+l3, l4, l5, l6, l7, l8 = sch.get_loops(block=b0)
+l9 = sch.fuse(l7, l8, preserve_unit_iters=True)
+v10, v11 = sch.sample_perfect_tile(loop=l9, n=2, max_innermost_factor=64, decision=[49, 1])
+l12, l13 = sch.split(loop=l9, factors=[v10, v11], preserve_unit_iters=True, disable_predication=False)
+b14 = sch.rfactor(loop=l12, factor_axis=4)
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.random_compute_producer", ann_val=1)
+sch.annotate(block_or_loop=b2, ann_key="meta_schedule.parallel", ann_val=96)
+sch.annotate(block_or_loop=b2, ann_key="meta_schedule.vectorize", ann_val=64)
+v15 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=3)
+sch.annotate(block_or_loop=b2, ann_key="meta_schedule.unroll_explicit", ann_val=v15)
+b16, = sch.get_producers(block=b0)
+sch.unannotate(block_or_loop=b0, ann_key="meta_schedule.random_compute_producer")
+l17 = sch.sample_compute_location(block=b0, decision=3)
+sch.compute_at(block=b0, loop=l17, preserve_unit_loops=True, index=-1)
+l18 = sch.sample_compute_location(block=b16, decision=4)
+sch.compute_at(block=b16, loop=l18, preserve_unit_loops=True, index=-1)
+2024-05-21 12:50:22 [INFO] [task_scheduler.cc:170] Design space #1:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(p0: T.Buffer((T.int64(1), T.int64(7), T.int64(7), T.int64(1280)), "float32"), adaptive_pool_avg: T.Buffer((T.int64(1), T.int64(1), T.int64(1), T.int64(1280)), "float32")):
+        T.func_attr({"tir.noalias": T.bool(True)})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 96, "meta_schedule.unroll_explicit": 0, "meta_schedule.vectorize": 64})
+            adaptive_pool_sum = T.alloc_buffer((T.int64(1), T.int64(1), T.int64(1), T.int64(1280)))
+            adaptive_pool_sum_rf = T.alloc_buffer((T.int64(1), T.int64(1), T.int64(1), T.int64(1280), T.int64(1)))
+            for ax0, ax1, ax2, ax3 in T.grid(T.int64(1), T.int64(1), T.int64(1), T.int64(1280)):
+                for ax0_1, ax1_1, ax2_1, ax3_1, ax4, ax5 in T.grid(T.int64(1), T.int64(1), T.int64(1), T.int64(1), T.int64(1), T.int64(49)):
+                    with T.block("adaptive_pool_sum_rf"):
+                        vrv0_rv1_fused_1, v_ax0, v_ax1, v_ax2 = T.axis.remap("SSSS", [ax0_1, ax1_1, ax2_1, ax3_1])
+                        v_ax3 = T.axis.spatial(T.int64(1280), ax3 + ax4)
+                        vrv0_rv1_fused_0 = T.axis.reduce(T.int64(49), ax5)
+                        T.reads(p0[v_ax0, v_ax1 * T.int64(7) + (vrv0_rv1_fused_0 + vrv0_rv1_fused_1) // T.int64(7), v_ax2 * T.int64(7) + (vrv0_rv1_fused_0 + vrv0_rv1_fused_1) % T.int64(7), v_ax3])
+                        T.writes(adaptive_pool_sum_rf[v_ax0, v_ax1, v_ax2, v_ax3, vrv0_rv1_fused_1])
+                        with T.init():
+                            adaptive_pool_sum_rf[v_ax0, v_ax1, v_ax2, v_ax3, vrv0_rv1_fused_1] = T.float32(0)
+                        adaptive_pool_sum_rf[v_ax0, v_ax1, v_ax2, v_ax3, vrv0_rv1_fused_1] = adaptive_pool_sum_rf[v_ax0, v_ax1, v_ax2, v_ax3, vrv0_rv1_fused_1] + p0[v_ax0, v_ax1 * T.int64(7) + (vrv0_rv1_fused_0 + vrv0_rv1_fused_1) // T.int64(7), v_ax2 * T.int64(7) + (vrv0_rv1_fused_0 + vrv0_rv1_fused_1) % T.int64(7), v_ax3]
+                for rv0_rv1_fused_1 in range(T.int64(1)):
+                    with T.block("adaptive_pool_sum"):
+                        vrv0_rv1_fused_1, v_ax0, v_ax1, v_ax2, v_ax3 = T.axis.remap("RSSSS", [rv0_rv1_fused_1, ax0, ax1, ax2, ax3])
+                        T.reads(adaptive_pool_sum_rf[v_ax0, v_ax1, v_ax2, v_ax3, vrv0_rv1_fused_1])
+                        T.writes(adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3])
+                        with T.init():
+                            adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] = T.float32(0)
+                        adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] = adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] + adaptive_pool_sum_rf[v_ax0, v_ax1, v_ax2, v_ax3, vrv0_rv1_fused_1]
+            for ax0, ax1, ax2, ax3 in T.grid(T.int64(1), T.int64(1), T.int64(1), T.int64(1280)):
+                with T.block("adaptive_pool_avg"):
+                    v_ax0, v_ax1, v_ax2, v_ax3 = T.axis.remap("SSSS", [ax0, ax1, ax2, ax3])
+                    T.reads(adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3])
+                    T.writes(adaptive_pool_avg[v_ax0, v_ax1, v_ax2, v_ax3])
+                    adaptive_pool_avg[v_ax0, v_ax1, v_ax2, v_ax3] = adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] * T.float32(0.020408163265306121)
+b0 = sch.get_block(name="adaptive_pool_sum", func_name="main")
+b1 = sch.get_block(name="adaptive_pool_avg", func_name="main")
+b2 = sch.get_block(name="root", func_name="main")
+sch.unannotate(block_or_loop=b1, ann_key="schedule_rule")
+l3, l4, l5, l6, l7, l8 = sch.get_loops(block=b0)
+l9 = sch.fuse(l7, l8, preserve_unit_iters=True)
+v10, v11 = sch.sample_perfect_tile(loop=l9, n=2, max_innermost_factor=64, decision=[49, 1])
+l12, l13 = sch.split(loop=l9, factors=[v10, v11], preserve_unit_iters=True, disable_predication=False)
+b14 = sch.rfactor(loop=l13, factor_axis=4)
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.random_compute_producer", ann_val=1)
+sch.annotate(block_or_loop=b2, ann_key="meta_schedule.parallel", ann_val=96)
+sch.annotate(block_or_loop=b2, ann_key="meta_schedule.vectorize", ann_val=64)
+v15 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=0)
+sch.annotate(block_or_loop=b2, ann_key="meta_schedule.unroll_explicit", ann_val=v15)
+b16, = sch.get_producers(block=b0)
+sch.unannotate(block_or_loop=b0, ann_key="meta_schedule.random_compute_producer")
+l17 = sch.sample_compute_location(block=b0, decision=-1)
+sch.compute_at(block=b0, loop=l17, preserve_unit_loops=True, index=-1)
+l18 = sch.sample_compute_location(block=b16, decision=3)
+sch.compute_at(block=b16, loop=l18, preserve_unit_loops=True, index=-1)
+2024-05-21 12:50:22 [INFO] [task_scheduler.cc:170] Design space #2:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(p0: T.Buffer((T.int64(1), T.int64(7), T.int64(7), T.int64(1280)), "float32"), adaptive_pool_avg: T.Buffer((T.int64(1), T.int64(1), T.int64(1), T.int64(1280)), "float32")):
+        T.func_attr({"tir.noalias": T.bool(True)})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 96, "meta_schedule.unroll_explicit": 16, "meta_schedule.vectorize": 64})
+            adaptive_pool_sum = T.alloc_buffer((T.int64(1), T.int64(1), T.int64(1), T.int64(1280)))
+            for ax0, ax1, ax2, ax3 in T.grid(T.int64(1), T.int64(1), T.int64(1), T.int64(1280)):
+                for ax0_1, ax1_1, ax2_1, ax3_1, ax4, ax5 in T.grid(T.int64(1), T.int64(1), T.int64(1), T.int64(1), T.int64(7), T.int64(7)):
+                    with T.block("adaptive_pool_sum"):
+                        v_ax0, v_ax1, v_ax2 = T.axis.remap("SSS", [ax0_1, ax1_1, ax2_1])
+                        v_ax3 = T.axis.spatial(T.int64(1280), ax3 + ax3_1)
+                        v_rv0, v_rv1 = T.axis.remap("RR", [ax4, ax5])
+                        T.reads(p0[v_ax0, v_ax1 * T.int64(7) + v_rv0, v_ax2 * T.int64(7) + v_rv1, v_ax3])
+                        T.writes(adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3])
+                        with T.init():
+                            adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] = T.float32(0)
+                        adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] = adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] + p0[v_ax0, v_ax1 * T.int64(7) + v_rv0, v_ax2 * T.int64(7) + v_rv1, v_ax3]
+                with T.block("adaptive_pool_avg"):
+                    v_ax0, v_ax1, v_ax2, v_ax3 = T.axis.remap("SSSS", [ax0, ax1, ax2, ax3])
+                    T.reads(adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3])
+                    T.writes(adaptive_pool_avg[v_ax0, v_ax1, v_ax2, v_ax3])
+                    adaptive_pool_avg[v_ax0, v_ax1, v_ax2, v_ax3] = adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] * T.float32(0.020408163265306121)
+b0 = sch.get_block(name="adaptive_pool_sum", func_name="main")
+b1 = sch.get_block(name="adaptive_pool_avg", func_name="main")
+b2 = sch.get_block(name="root", func_name="main")
+sch.unannotate(block_or_loop=b1, ann_key="schedule_rule")
+sch.annotate(block_or_loop=b2, ann_key="meta_schedule.parallel", ann_val=96)
+sch.annotate(block_or_loop=b2, ann_key="meta_schedule.vectorize", ann_val=64)
+v3 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=1)
+sch.annotate(block_or_loop=b2, ann_key="meta_schedule.unroll_explicit", ann_val=v3)
+l4 = sch.sample_compute_location(block=b0, decision=3)
+sch.compute_at(block=b0, loop=l4, preserve_unit_loops=True, index=-1)
+2024-05-21 13:44:33 [INFO] [evolutionary_search.cc:713] Generating candidates......
+2024-05-21 13:44:33 [INFO] [evolutionary_search.cc:715] Picked top 0 candidate(s) from database
+2024-05-21 13:44:34 [INFO] [evolutionary_search.cc:533] Sample-Init-Population summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0xac31bd8)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0x7c8b938)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0xdcf86a8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x133cff58)]: 0 failure(s)
+2024-05-21 13:44:34 [INFO] [evolutionary_search.cc:723] Sampled 512 candidate(s)
+2024-05-21 13:44:34 [INFO] [evolutionary_search.cc:621] Evolve iter #0 done. Summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0xac31bd8)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0x7c8b938)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0xdcf86a8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x133cff58)]: 0 failure(s)
+2024-05-21 13:44:34 [INFO] [evolutionary_search.cc:621] Evolve iter #1 done. Summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0xac31bd8)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0x7c8b938)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0xdcf86a8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x133cff58)]: 0 failure(s)
+2024-05-21 13:44:35 [INFO] [evolutionary_search.cc:621] Evolve iter #2 done. Summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0xac31bd8)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0x7c8b938)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0xdcf86a8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x133cff58)]: 0 failure(s)
+2024-05-21 13:44:35 [INFO] [evolutionary_search.cc:621] Evolve iter #3 done. Summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0xac31bd8)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0x7c8b938)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0xdcf86a8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x133cff58)]: 0 failure(s)
+2024-05-21 13:44:36 [INFO] [evolutionary_search.cc:649] Scores of the best 64 candidates:
+[1 : 16]:	0.9913  0.9756  0.9571  0.9459  0.9446  0.9401  0.9066  0.9012  0.8980  0.8968  0.8769  0.8529  0.8311  0.8207  0.8180  0.8058
+[17 : 32]:	0.7998  0.7989  0.7849  0.7820  0.7803  0.7779  0.7628  0.7589  0.7536  0.7204  0.7185  0.7018  0.6969  0.6750  0.6740  0.6707
+[33 : 48]:	0.6651  0.6473  0.6425  0.6360  0.6346  0.6337  0.6330  0.6289  0.6238  0.6199  0.6180  0.6160  0.6018  0.5943  0.5940  0.5812
+[49 : 64]:	0.5686  0.5350  0.5232  0.5198  0.4980  0.4584  0.4575  0.4540  0.4397  0.4287  0.4252  0.4098  0.4084  0.4044  0.4030  0.4002
+2024-05-21 13:44:36 [INFO] [evolutionary_search.cc:727] Got 64 candidate(s) with evolutionary search
+2024-05-21 13:44:36 [INFO] [evolutionary_search.cc:730] Sending 63 candidates(s) for measurement
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #1: GFLOPs: 2.9789. Time: 21.4843 us. Best GFLOPs: 2.9789
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #2: GFLOPs: 8.4606. Time: 7.5645 us. Best GFLOPs: 8.4606
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #3: GFLOPs: 5.6450. Time: 11.3374 us. Best GFLOPs: 8.4606
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #4: GFLOPs: 2.5131. Time: 25.4670 us. Best GFLOPs: 8.4606
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #5: GFLOPs: 5.3346. Time: 11.9970 us. Best GFLOPs: 8.4606
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #6: GFLOPs: 9.0800. Time: 7.0485 us. Best GFLOPs: 9.0800
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #7: GFLOPs: 2.0576. Time: 31.1048 us. Best GFLOPs: 9.0800
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #8: GFLOPs: 8.7329. Time: 7.3286 us. Best GFLOPs: 9.0800
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #9: GFLOPs: 5.4127. Time: 11.8241 us. Best GFLOPs: 9.0800
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #10: GFLOPs: 5.0992. Time: 12.5509 us. Best GFLOPs: 9.0800
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #11: GFLOPs: 5.4166. Time: 11.8155 us. Best GFLOPs: 9.0800
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #12: GFLOPs: 9.3152. Time: 6.8705 us. Best GFLOPs: 9.3152
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #13: GFLOPs: 2.5841. Time: 24.7673 us. Best GFLOPs: 9.3152
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #14: GFLOPs: 2.4714. Time: 25.8960 us. Best GFLOPs: 9.3152
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #15: GFLOPs: 2.1083. Time: 30.3565 us. Best GFLOPs: 9.3152
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #16: GFLOPs: 8.9599. Time: 7.1429 us. Best GFLOPs: 9.3152
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #17: GFLOPs: 2.1045. Time: 30.4109 us. Best GFLOPs: 9.3152
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #18: GFLOPs: 5.2704. Time: 12.1432 us. Best GFLOPs: 9.3152
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #19: GFLOPs: 5.2083. Time: 12.2881 us. Best GFLOPs: 9.3152
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #20: GFLOPs: 2.6353. Time: 24.2859 us. Best GFLOPs: 9.3152
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #21: GFLOPs: 9.0661. Time: 7.0592 us. Best GFLOPs: 9.3152
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #22: GFLOPs: 5.7780. Time: 11.0765 us. Best GFLOPs: 9.3152
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #23: GFLOPs: 5.5231. Time: 11.5878 us. Best GFLOPs: 9.3152
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #24: GFLOPs: 3.7284. Time: 17.1655 us. Best GFLOPs: 9.3152
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #25: GFLOPs: 2.2447. Time: 28.5112 us. Best GFLOPs: 9.3152
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #26: GFLOPs: 4.9615. Time: 12.8993 us. Best GFLOPs: 9.3152
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #27: GFLOPs: 3.3350. Time: 19.1907 us. Best GFLOPs: 9.3152
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #28: GFLOPs: 2.5425. Time: 25.1717 us. Best GFLOPs: 9.3152
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #29: GFLOPs: 2.1440. Time: 29.8503 us. Best GFLOPs: 9.3152
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #30: GFLOPs: 5.5488. Time: 11.5341 us. Best GFLOPs: 9.3152
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #31: GFLOPs: 3.9247. Time: 16.3069 us. Best GFLOPs: 9.3152
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #32: GFLOPs: 9.3303. Time: 6.8594 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #33: GFLOPs: 2.2582. Time: 28.3411 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #34: GFLOPs: 2.1172. Time: 30.2293 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #35: GFLOPs: 7.2862. Time: 8.7838 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #36: GFLOPs: 4.0909. Time: 15.6447 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #37: GFLOPs: 2.7544. Time: 23.2359 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #38: GFLOPs: 3.4414. Time: 18.5971 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #39: GFLOPs: 4.0345. Time: 15.8633 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #40: GFLOPs: 2.1562. Time: 29.6814 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #41: GFLOPs: 8.8413. Time: 7.2388 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #42: GFLOPs: 2.8199. Time: 22.6955 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #43: GFLOPs: 8.8979. Time: 7.1927 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #44: GFLOPs: 8.5531. Time: 7.4827 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #45: GFLOPs: 3.8746. Time: 16.5180 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #46: GFLOPs: 5.6276. Time: 11.3726 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #47: GFLOPs: 5.7019. Time: 11.2243 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #48: GFLOPs: 3.7941. Time: 16.8684 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #49: GFLOPs: 9.2132. Time: 6.9466 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #50: GFLOPs: 5.4509. Time: 11.7412 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #51: GFLOPs: 9.1165. Time: 7.0202 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #52: GFLOPs: 5.3620. Time: 11.9359 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #53: GFLOPs: 2.4798. Time: 25.8088 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #54: GFLOPs: 5.1679. Time: 12.3842 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #55: GFLOPs: 8.9981. Time: 7.1126 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #56: GFLOPs: 3.7994. Time: 16.8449 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #57: GFLOPs: 2.5443. Time: 25.1544 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #58: GFLOPs: 9.1533. Time: 6.9920 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #59: GFLOPs: 3.4853. Time: 18.3631 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #60: GFLOPs: 2.6203. Time: 24.4245 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #61: GFLOPs: 8.8087. Time: 7.2655 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #62: GFLOPs: 8.5960. Time: 7.4453 us. Best GFLOPs: 9.3303
+2024-05-21 13:49:39 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #63: GFLOPs: 5.2779. Time: 12.1259 us. Best GFLOPs: 9.3303

@@ -1,0 +1,137 @@
+2024-05-21 07:11:21 [INFO] [task_scheduler.cc:160] Initializing Task #34: "fused_nn_global_avg_pool2d"
+2024-05-21 07:11:21 [INFO] [task_scheduler.cc:35] 
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(p0: T.Buffer((T.int64(1), T.int64(1), T.int64(1), T.int64(1280)), "float32"), adaptive_pool_avg: T.Buffer((T.int64(1), T.int64(1), T.int64(1), T.int64(1280)), "float32")):
+        T.func_attr({"tir.noalias": T.bool(True)})
+        # with T.block("root"):
+        adaptive_pool_sum = T.alloc_buffer((T.int64(1), T.int64(1), T.int64(1), T.int64(1280)))
+        for ax0, ax1, ax2, ax3, rv0, rv1 in T.grid(T.int64(1), T.int64(1), T.int64(1), T.int64(1280), T.int64(1), T.int64(1)):
+            with T.block("adaptive_pool_sum"):
+                v_ax0, v_ax1, v_ax2, v_ax3, v_rv0, v_rv1 = T.axis.remap("SSSSRR", [ax0, ax1, ax2, ax3, rv0, rv1])
+                T.reads(p0[v_ax0, v_ax1 + v_rv0, v_ax2 + v_rv1, v_ax3])
+                T.writes(adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3])
+                with T.init():
+                    adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] = T.float32(0)
+                adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] = adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] + p0[v_ax0, v_ax1 + v_rv0, v_ax2 + v_rv1, v_ax3]
+        for ax0, ax1, ax2, ax3 in T.grid(T.int64(1), T.int64(1), T.int64(1), T.int64(1280)):
+            with T.block("adaptive_pool_avg"):
+                v_ax0, v_ax1, v_ax2, v_ax3 = T.axis.remap("SSSS", [ax0, ax1, ax2, ax3])
+                T.reads(adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3])
+                T.writes(adaptive_pool_avg[v_ax0, v_ax1, v_ax2, v_ax3])
+                T.block_attr({"schedule_rule": "meta_schedule.adaptive_pool_avg"})
+                adaptive_pool_avg[v_ax0, v_ax1, v_ax2, v_ax3] = adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3]
+2024-05-21 07:11:21 [INFO] [task_scheduler.cc:164] Total 1 design space(s) generated
+2024-05-21 07:11:21 [INFO] [task_scheduler.cc:170] Design space #0:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(p0: T.Buffer((T.int64(1), T.int64(1), T.int64(1), T.int64(1280)), "float32"), adaptive_pool_avg: T.Buffer((T.int64(1), T.int64(1), T.int64(1), T.int64(1280)), "float32")):
+        T.func_attr({"tir.noalias": T.bool(True)})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 96, "meta_schedule.unroll_explicit": 512, "meta_schedule.vectorize": 64})
+            adaptive_pool_sum = T.alloc_buffer((T.int64(1), T.int64(1), T.int64(1), T.int64(1280)))
+            for ax0, ax1, ax2, ax3, rv0, rv1 in T.grid(T.int64(1), T.int64(1), T.int64(1), T.int64(1280), T.int64(1), T.int64(1)):
+                with T.block("adaptive_pool_sum"):
+                    v_ax0, v_ax1, v_ax2, v_ax3, v_rv0, v_rv1 = T.axis.remap("SSSSRR", [ax0, ax1, ax2, ax3, rv0, rv1])
+                    T.reads(p0[v_ax0, v_ax1 + v_rv0, v_ax2 + v_rv1, v_ax3])
+                    T.writes(adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3])
+                    with T.init():
+                        adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] = T.float32(0)
+                    adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] = adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] + p0[v_ax0, v_ax1 + v_rv0, v_ax2 + v_rv1, v_ax3]
+            for ax0, ax1, ax2, ax3 in T.grid(T.int64(1), T.int64(1), T.int64(1), T.int64(1280)):
+                with T.block("adaptive_pool_avg"):
+                    v_ax0, v_ax1, v_ax2, v_ax3 = T.axis.remap("SSSS", [ax0, ax1, ax2, ax3])
+                    T.reads(adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3])
+                    T.writes(adaptive_pool_avg[v_ax0, v_ax1, v_ax2, v_ax3])
+                    adaptive_pool_avg[v_ax0, v_ax1, v_ax2, v_ax3] = adaptive_pool_sum[v_ax0, v_ax1, v_ax2, v_ax3]
+b0 = sch.get_block(name="adaptive_pool_sum", func_name="main")
+b1 = sch.get_block(name="adaptive_pool_avg", func_name="main")
+b2 = sch.get_block(name="root", func_name="main")
+sch.unannotate(block_or_loop=b1, ann_key="schedule_rule")
+sch.annotate(block_or_loop=b2, ann_key="meta_schedule.parallel", ann_val=96)
+sch.annotate(block_or_loop=b2, ann_key="meta_schedule.vectorize", ann_val=64)
+v3 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=3)
+sch.annotate(block_or_loop=b2, ann_key="meta_schedule.unroll_explicit", ann_val=v3)
+l4 = sch.sample_compute_location(block=b0, decision=-1)
+sch.compute_at(block=b0, loop=l4, preserve_unit_loops=True, index=-1)
+2024-05-21 08:05:54 [INFO] [evolutionary_search.cc:713] Generating candidates......
+2024-05-21 08:05:54 [INFO] [evolutionary_search.cc:715] Picked top 0 candidate(s) from database
+2024-05-21 08:05:54 [INFO] [evolutionary_search.cc:533] Sample-Init-Population summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0xd4febb8)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0xecb0928)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0xd0c18c8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x67d6948)]: 0 failure(s)
+2024-05-21 08:05:54 [INFO] [evolutionary_search.cc:723] Sampled 512 candidate(s)
+2024-05-21 08:05:54 [INFO] [evolutionary_search.cc:621] Evolve iter #0 done. Summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0xd4febb8)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0xecb0928)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0xd0c18c8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x67d6948)]: 0 failure(s)
+2024-05-21 08:05:55 [INFO] [evolutionary_search.cc:621] Evolve iter #1 done. Summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0xd4febb8)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0xecb0928)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0xd0c18c8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x67d6948)]: 0 failure(s)
+2024-05-21 08:05:55 [INFO] [evolutionary_search.cc:621] Evolve iter #2 done. Summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0xd4febb8)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0xecb0928)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0xd0c18c8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x67d6948)]: 0 failure(s)
+2024-05-21 08:05:55 [INFO] [evolutionary_search.cc:621] Evolve iter #3 done. Summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0xd4febb8)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0xecb0928)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0xd0c18c8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x67d6948)]: 0 failure(s)
+2024-05-21 08:05:55 [INFO] [evolutionary_search.cc:649] Scores of the best 8 candidates:
+[1 : 8]:	0.9891  0.9784  0.7022  0.6695  0.5390  0.5045  0.3138  0.1123
+2024-05-21 08:05:55 [INFO] [evolutionary_search.cc:727] Got 8 candidate(s) with evolutionary search
+2024-05-21 08:05:55 [INFO] [evolutionary_search.cc:730] Sending 8 candidates(s) for measurement
+2024-05-21 08:09:52 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #1: GFLOPs: 0.1361. Time: 9.4034 us. Best GFLOPs: 0.1361
+2024-05-21 08:09:52 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #2: GFLOPs: 0.1396. Time: 9.1700 us. Best GFLOPs: 0.1396
+2024-05-21 08:09:52 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #3: GFLOPs: 0.1395. Time: 9.1773 us. Best GFLOPs: 0.1396
+2024-05-21 08:09:52 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #4: GFLOPs: 0.2926. Time: 4.3739 us. Best GFLOPs: 0.2926
+2024-05-21 08:09:52 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #5: GFLOPs: 0.2453. Time: 5.2185 us. Best GFLOPs: 0.2926
+2024-05-21 08:09:52 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #6: GFLOPs: 0.1175. Time: 10.8963 us. Best GFLOPs: 0.2926
+2024-05-21 08:09:52 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #7: GFLOPs: 0.2450. Time: 5.2243 us. Best GFLOPs: 0.2926
+2024-05-21 08:09:52 [INFO] [task_scheduler.cc:131] [Task #34: fused_nn_global_avg_pool2d] Trial #8: GFLOPs: 0.2456. Time: 5.2117 us. Best GFLOPs: 0.2926
+2024-05-21 09:15:07 [INFO] [evolutionary_search.cc:713] Generating candidates......
+2024-05-21 09:15:07 [INFO] [evolutionary_search.cc:715] Picked top 8 candidate(s) from database
+2024-05-21 09:15:07 [INFO] [evolutionary_search.cc:533] Sample-Init-Population summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0xd4febb8)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0xecb0928)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0xd0c18c8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x67d6948)]: 0 failure(s)
+2024-05-21 09:15:07 [INFO] [evolutionary_search.cc:723] Sampled 504 candidate(s)
+2024-05-21 09:15:07 [INFO] [evolutionary_search.cc:621] Evolve iter #0 done. Summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0xd4febb8)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0xecb0928)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0xd0c18c8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x67d6948)]: 0 failure(s)
+2024-05-21 09:15:08 [INFO] [evolutionary_search.cc:621] Evolve iter #1 done. Summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0xd4febb8)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0xecb0928)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0xd0c18c8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x67d6948)]: 0 failure(s)
+2024-05-21 09:15:09 [INFO] [evolutionary_search.cc:621] Evolve iter #2 done. Summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0xd4febb8)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0xecb0928)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0xd0c18c8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x67d6948)]: 0 failure(s)
+2024-05-21 09:15:09 [INFO] [evolutionary_search.cc:621] Evolve iter #3 done. Summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0xd4febb8)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0xecb0928)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0xd0c18c8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x67d6948)]: 0 failure(s)
+2024-05-21 09:15:10 [INFO] [evolutionary_search.cc:649] Scores of the best 0 candidates:
+2024-05-21 09:15:10 [INFO] [evolutionary_search.cc:727] Got 0 candidate(s) with evolutionary search
+2024-05-21 09:15:10 [INFO] [evolutionary_search.cc:730] Sending 0 candidates(s) for measurement

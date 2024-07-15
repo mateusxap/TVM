@@ -1,0 +1,431 @@
+2024-05-20 13:16:48 [INFO] [task_scheduler.cc:160] Initializing Task #0: "fused_nn_contrib_conv2d_NCHWc_add_nn_relu"
+2024-05-20 13:16:48 [INFO] [task_scheduler.cc:35] 
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(p0: T.Buffer((T.int64(1), T.int64(124), T.int64(1), T.int64(1), T.int64(8)), "float32"), p1: T.Buffer((T.int64(16), T.int64(124), T.int64(1), T.int64(1), T.int64(8), T.int64(8)), "float32"), p2: T.Buffer((T.int64(1), T.int64(16), T.int64(1), T.int64(1), T.int64(8)), "float32"), T_relu: T.Buffer((T.int64(1), T.int64(16), T.int64(1), T.int64(1), T.int64(8)), "float32")):
+        T.func_attr({"tir.noalias": T.bool(True)})
+        # with T.block("root"):
+        conv2d_NCHWc = T.alloc_buffer((T.int64(1), T.int64(16), T.int64(1), T.int64(1), T.int64(8)))
+        T_add = T.alloc_buffer((T.int64(1), T.int64(16), T.int64(1), T.int64(1), T.int64(8)))
+        for n, oc_chunk, oh, ow, oc_block, ic, kh, kw in T.grid(T.int64(1), T.int64(16), T.int64(1), T.int64(1), T.int64(8), T.int64(992), T.int64(1), T.int64(1)):
+            with T.block("conv2d_NCHWc"):
+                v_n, v_oc_chunk, v_oh, v_ow, v_oc_block, v_ic, v_kh, v_kw = T.axis.remap("SSSSSRRR", [n, oc_chunk, oh, ow, oc_block, ic, kh, kw])
+                T.reads(p0[v_n, v_ic // T.int64(8), v_oh + v_kh, v_ow + v_kw, v_ic % T.int64(8)], p1[v_oc_chunk, v_ic // T.int64(8), v_kh, v_kw, v_ic % T.int64(8), v_oc_block])
+                T.writes(conv2d_NCHWc[v_n, v_oc_chunk, v_oh, v_ow, v_oc_block])
+                with T.init():
+                    conv2d_NCHWc[v_n, v_oc_chunk, v_oh, v_ow, v_oc_block] = T.float32(0)
+                conv2d_NCHWc[v_n, v_oc_chunk, v_oh, v_ow, v_oc_block] = conv2d_NCHWc[v_n, v_oc_chunk, v_oh, v_ow, v_oc_block] + p0[v_n, v_ic // T.int64(8), v_oh + v_kh, v_ow + v_kw, v_ic % T.int64(8)] * p1[v_oc_chunk, v_ic // T.int64(8), v_kh, v_kw, v_ic % T.int64(8), v_oc_block]
+        for ax0, ax1, ax2, ax3, ax4 in T.grid(T.int64(1), T.int64(16), T.int64(1), T.int64(1), T.int64(8)):
+            with T.block("T_add"):
+                v_ax0, v_ax1, v_ax2, v_ax3, v_ax4 = T.axis.remap("SSSSS", [ax0, ax1, ax2, ax3, ax4])
+                T.reads(conv2d_NCHWc[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4], p2[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4])
+                T.writes(T_add[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4])
+                T_add[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4] = conv2d_NCHWc[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4] + p2[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4]
+        for ax0, ax1, ax2, ax3, ax4 in T.grid(T.int64(1), T.int64(16), T.int64(1), T.int64(1), T.int64(8)):
+            with T.block("T_relu"):
+                v_ax0, v_ax1, v_ax2, v_ax3, v_ax4 = T.axis.remap("SSSSS", [ax0, ax1, ax2, ax3, ax4])
+                T.reads(T_add[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4])
+                T.writes(T_relu[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4])
+                T_relu[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4] = T.max(T_add[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4], T.float32(0))
+2024-05-20 13:16:48 [INFO] [task_scheduler.cc:164] Total 3 design space(s) generated
+2024-05-20 13:16:48 [INFO] [task_scheduler.cc:170] Design space #0:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(p0: T.Buffer((T.int64(1), T.int64(124), T.int64(1), T.int64(1), T.int64(8)), "float32"), p1: T.Buffer((T.int64(16), T.int64(124), T.int64(1), T.int64(1), T.int64(8), T.int64(8)), "float32"), p2: T.Buffer((T.int64(1), T.int64(16), T.int64(1), T.int64(1), T.int64(8)), "float32"), T_relu: T.Buffer((T.int64(1), T.int64(16), T.int64(1), T.int64(1), T.int64(8)), "float32")):
+        T.func_attr({"tir.noalias": T.bool(True)})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 96, "meta_schedule.unroll_explicit": 16, "meta_schedule.vectorize": 64})
+            conv2d_NCHWc = T.alloc_buffer((T.int64(1), T.int64(16), T.int64(1), T.int64(1), T.int64(8)))
+            for n_0, oc_chunk_0, oh_0, ow_0, oc_block_0, n_1, oc_chunk_1, oh_1, ow_1, oc_block_1, ic_0, kh_0, kw_0, n_2, oc_chunk_2, oh_2, ow_2, oc_block_2, ic_1, kh_1, kw_1, n_3, oc_chunk_3, oh_3, ow_3, oc_block_3 in T.grid(T.int64(1), T.int64(1), T.int64(1), T.int64(1), T.int64(2), T.int64(1), T.int64(4), T.int64(1), T.int64(1), T.int64(2), T.int64(124), T.int64(1), T.int64(1), T.int64(1), T.int64(1), T.int64(1), T.int64(1), T.int64(1), T.int64(8), T.int64(1), T.int64(1), T.int64(1), T.int64(4), T.int64(1), T.int64(1), T.int64(2)):
+                with T.block("conv2d_NCHWc"):
+                    v_n = T.axis.spatial(T.int64(1), n_0 + n_1 + n_2 + n_3)
+                    v_oc_chunk = T.axis.spatial(T.int64(16), oc_chunk_0 * T.int64(16) + oc_chunk_1 * T.int64(4) + oc_chunk_2 * T.int64(4) + oc_chunk_3)
+                    v_oh = T.axis.spatial(T.int64(1), oh_0 + oh_1 + oh_2 + oh_3)
+                    v_ow = T.axis.spatial(T.int64(1), ow_0 + ow_1 + ow_2 + ow_3)
+                    v_oc_block = T.axis.spatial(T.int64(8), oc_block_0 * T.int64(4) + oc_block_1 * T.int64(2) + oc_block_2 * T.int64(2) + oc_block_3)
+                    v_ic = T.axis.reduce(T.int64(992), ic_0 * T.int64(8) + ic_1)
+                    v_kh = T.axis.reduce(T.int64(1), kh_0 + kh_1)
+                    v_kw = T.axis.reduce(T.int64(1), kw_0 + kw_1)
+                    T.reads(p0[v_n, v_ic // T.int64(8), v_oh + v_kh, v_ow + v_kw, v_ic % T.int64(8)], p1[v_oc_chunk, v_ic // T.int64(8), v_kh, v_kw, v_ic % T.int64(8), v_oc_block])
+                    T.writes(conv2d_NCHWc[v_n, v_oc_chunk, v_oh, v_ow, v_oc_block])
+                    T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                    with T.init():
+                        conv2d_NCHWc[v_n, v_oc_chunk, v_oh, v_ow, v_oc_block] = T.float32(0)
+                    conv2d_NCHWc[v_n, v_oc_chunk, v_oh, v_ow, v_oc_block] = conv2d_NCHWc[v_n, v_oc_chunk, v_oh, v_ow, v_oc_block] + p0[v_n, v_ic // T.int64(8), v_oh + v_kh, v_ow + v_kw, v_ic % T.int64(8)] * p1[v_oc_chunk, v_ic // T.int64(8), v_kh, v_kw, v_ic % T.int64(8), v_oc_block]
+            for ax0, ax1, ax2, ax3, ax4 in T.grid(T.int64(1), T.int64(16), T.int64(1), T.int64(1), T.int64(8)):
+                with T.block("T_relu"):
+                    v_ax0, v_ax1, v_ax2, v_ax3, v_ax4 = T.axis.remap("SSSSS", [ax0, ax1, ax2, ax3, ax4])
+                    T.reads(conv2d_NCHWc[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4], p2[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4])
+                    T.writes(T_relu[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4])
+                    T_relu[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4] = T.max(conv2d_NCHWc[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4] + p2[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4], T.float32(0))
+b0 = sch.get_block(name="conv2d_NCHWc", func_name="main")
+b1 = sch.get_block(name="T_add", func_name="main")
+b2 = sch.get_block(name="root", func_name="main")
+sch.compute_inline(block=b1)
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.tiling_structure", ann_val="SSRSRS")
+l3, l4, l5, l6, l7, l8, l9, l10 = sch.get_loops(block=b0)
+v11, v12, v13, v14 = sch.sample_perfect_tile(loop=l3, n=4, max_innermost_factor=64, decision=[1, 1, 1, 1])
+l15, l16, l17, l18 = sch.split(loop=l3, factors=[v11, v12, v13, v14], preserve_unit_iters=True, disable_predication=False)
+v19, v20, v21, v22 = sch.sample_perfect_tile(loop=l4, n=4, max_innermost_factor=64, decision=[1, 4, 1, 4])
+l23, l24, l25, l26 = sch.split(loop=l4, factors=[v19, v20, v21, v22], preserve_unit_iters=True, disable_predication=False)
+v27, v28, v29, v30 = sch.sample_perfect_tile(loop=l5, n=4, max_innermost_factor=64, decision=[1, 1, 1, 1])
+l31, l32, l33, l34 = sch.split(loop=l5, factors=[v27, v28, v29, v30], preserve_unit_iters=True, disable_predication=False)
+v35, v36, v37, v38 = sch.sample_perfect_tile(loop=l6, n=4, max_innermost_factor=64, decision=[1, 1, 1, 1])
+l39, l40, l41, l42 = sch.split(loop=l6, factors=[v35, v36, v37, v38], preserve_unit_iters=True, disable_predication=False)
+v43, v44, v45, v46 = sch.sample_perfect_tile(loop=l7, n=4, max_innermost_factor=64, decision=[2, 2, 1, 2])
+l47, l48, l49, l50 = sch.split(loop=l7, factors=[v43, v44, v45, v46], preserve_unit_iters=True, disable_predication=False)
+v51, v52 = sch.sample_perfect_tile(loop=l8, n=2, max_innermost_factor=64, decision=[124, 8])
+l53, l54 = sch.split(loop=l8, factors=[v51, v52], preserve_unit_iters=True, disable_predication=False)
+v55, v56 = sch.sample_perfect_tile(loop=l9, n=2, max_innermost_factor=64, decision=[1, 1])
+l57, l58 = sch.split(loop=l9, factors=[v55, v56], preserve_unit_iters=True, disable_predication=False)
+v59, v60 = sch.sample_perfect_tile(loop=l10, n=2, max_innermost_factor=64, decision=[1, 1])
+l61, l62 = sch.split(loop=l10, factors=[v59, v60], preserve_unit_iters=True, disable_predication=False)
+sch.reorder(l15, l23, l31, l39, l47, l16, l24, l32, l40, l48, l53, l57, l61, l17, l25, l33, l41, l49, l54, l58, l62, l18, l26, l34, l42, l50)
+sch.annotate(block_or_loop=b2, ann_key="meta_schedule.parallel", ann_val=96)
+sch.annotate(block_or_loop=b2, ann_key="meta_schedule.vectorize", ann_val=64)
+v63 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=1)
+sch.annotate(block_or_loop=b2, ann_key="meta_schedule.unroll_explicit", ann_val=v63)
+2024-05-20 13:16:48 [INFO] [task_scheduler.cc:170] Design space #1:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(p0: T.Buffer((T.int64(1), T.int64(124), T.int64(1), T.int64(1), T.int64(8)), "float32"), p1: T.Buffer((T.int64(16), T.int64(124), T.int64(1), T.int64(1), T.int64(8), T.int64(8)), "float32"), p2: T.Buffer((T.int64(1), T.int64(16), T.int64(1), T.int64(1), T.int64(8)), "float32"), T_relu: T.Buffer((T.int64(1), T.int64(16), T.int64(1), T.int64(1), T.int64(8)), "float32")):
+        T.func_attr({"tir.noalias": T.bool(True)})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 96, "meta_schedule.unroll_explicit": 0, "meta_schedule.vectorize": 64})
+            conv2d_NCHWc = T.alloc_buffer((T.int64(1), T.int64(16), T.int64(1), T.int64(1), T.int64(8)))
+            for n_0, oc_chunk_0, oh_0, ow_0, oc_block_0, n_1, oc_chunk_1, oh_1, ow_1, oc_block_1 in T.grid(T.int64(1), T.int64(1), T.int64(1), T.int64(1), T.int64(2), T.int64(1), T.int64(4), T.int64(1), T.int64(1), T.int64(2)):
+                for ic_0, kh_0, kw_0, n_2, oc_chunk_2, oh_2, ow_2, oc_block_2, ic_1, kh_1, kw_1, n_3, oc_chunk_3, oh_3, ow_3, oc_block_3 in T.grid(T.int64(124), T.int64(1), T.int64(1), T.int64(1), T.int64(1), T.int64(1), T.int64(1), T.int64(1), T.int64(8), T.int64(1), T.int64(1), T.int64(1), T.int64(4), T.int64(1), T.int64(1), T.int64(2)):
+                    with T.block("conv2d_NCHWc"):
+                        v_n = T.axis.spatial(T.int64(1), n_0 + n_1 + n_2 + n_3)
+                        v_oc_chunk = T.axis.spatial(T.int64(16), oc_chunk_0 * T.int64(16) + oc_chunk_1 * T.int64(4) + oc_chunk_2 * T.int64(4) + oc_chunk_3)
+                        v_oh = T.axis.spatial(T.int64(1), oh_0 + oh_1 + oh_2 + oh_3)
+                        v_ow = T.axis.spatial(T.int64(1), ow_0 + ow_1 + ow_2 + ow_3)
+                        v_oc_block = T.axis.spatial(T.int64(8), oc_block_0 * T.int64(4) + oc_block_1 * T.int64(2) + oc_block_2 * T.int64(2) + oc_block_3)
+                        v_ic = T.axis.reduce(T.int64(992), ic_0 * T.int64(8) + ic_1)
+                        v_kh = T.axis.reduce(T.int64(1), kh_0 + kh_1)
+                        v_kw = T.axis.reduce(T.int64(1), kw_0 + kw_1)
+                        T.reads(p0[v_n, v_ic // T.int64(8), v_oh + v_kh, v_ow + v_kw, v_ic % T.int64(8)], p1[v_oc_chunk, v_ic // T.int64(8), v_kh, v_kw, v_ic % T.int64(8), v_oc_block])
+                        T.writes(conv2d_NCHWc[v_n, v_oc_chunk, v_oh, v_ow, v_oc_block])
+                        T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                        with T.init():
+                            conv2d_NCHWc[v_n, v_oc_chunk, v_oh, v_ow, v_oc_block] = T.float32(0)
+                        conv2d_NCHWc[v_n, v_oc_chunk, v_oh, v_ow, v_oc_block] = conv2d_NCHWc[v_n, v_oc_chunk, v_oh, v_ow, v_oc_block] + p0[v_n, v_ic // T.int64(8), v_oh + v_kh, v_ow + v_kw, v_ic % T.int64(8)] * p1[v_oc_chunk, v_ic // T.int64(8), v_kh, v_kw, v_ic % T.int64(8), v_oc_block]
+                for ax0, ax1, ax2, ax3, ax4 in T.grid(T.int64(1), T.int64(4), T.int64(1), T.int64(1), T.int64(2)):
+                    with T.block("T_relu"):
+                        v_ax0 = T.axis.spatial(T.int64(1), ax0)
+                        v_ax1 = T.axis.spatial(T.int64(16), oc_chunk_1 * T.int64(4) + ax1)
+                        v_ax2, v_ax3 = T.axis.remap("SS", [ax2, ax3])
+                        v_ax4 = T.axis.spatial(T.int64(8), oc_block_0 * T.int64(4) + oc_block_1 * T.int64(2) + ax4)
+                        T.reads(conv2d_NCHWc[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4], p2[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4])
+                        T.writes(T_relu[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4])
+                        T_relu[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4] = T.max(conv2d_NCHWc[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4] + p2[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4], T.float32(0))
+b0 = sch.get_block(name="conv2d_NCHWc", func_name="main")
+b1 = sch.get_block(name="T_add", func_name="main")
+b2 = sch.get_block(name="root", func_name="main")
+sch.compute_inline(block=b1)
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.tiling_structure", ann_val="SSRSRS")
+l3, l4, l5, l6, l7, l8, l9, l10 = sch.get_loops(block=b0)
+v11, v12, v13, v14 = sch.sample_perfect_tile(loop=l3, n=4, max_innermost_factor=64, decision=[1, 1, 1, 1])
+l15, l16, l17, l18 = sch.split(loop=l3, factors=[v11, v12, v13, v14], preserve_unit_iters=True, disable_predication=False)
+v19, v20, v21, v22 = sch.sample_perfect_tile(loop=l4, n=4, max_innermost_factor=64, decision=[1, 4, 1, 4])
+l23, l24, l25, l26 = sch.split(loop=l4, factors=[v19, v20, v21, v22], preserve_unit_iters=True, disable_predication=False)
+v27, v28, v29, v30 = sch.sample_perfect_tile(loop=l5, n=4, max_innermost_factor=64, decision=[1, 1, 1, 1])
+l31, l32, l33, l34 = sch.split(loop=l5, factors=[v27, v28, v29, v30], preserve_unit_iters=True, disable_predication=False)
+v35, v36, v37, v38 = sch.sample_perfect_tile(loop=l6, n=4, max_innermost_factor=64, decision=[1, 1, 1, 1])
+l39, l40, l41, l42 = sch.split(loop=l6, factors=[v35, v36, v37, v38], preserve_unit_iters=True, disable_predication=False)
+v43, v44, v45, v46 = sch.sample_perfect_tile(loop=l7, n=4, max_innermost_factor=64, decision=[2, 2, 1, 2])
+l47, l48, l49, l50 = sch.split(loop=l7, factors=[v43, v44, v45, v46], preserve_unit_iters=True, disable_predication=False)
+v51, v52 = sch.sample_perfect_tile(loop=l8, n=2, max_innermost_factor=64, decision=[124, 8])
+l53, l54 = sch.split(loop=l8, factors=[v51, v52], preserve_unit_iters=True, disable_predication=False)
+v55, v56 = sch.sample_perfect_tile(loop=l9, n=2, max_innermost_factor=64, decision=[1, 1])
+l57, l58 = sch.split(loop=l9, factors=[v55, v56], preserve_unit_iters=True, disable_predication=False)
+v59, v60 = sch.sample_perfect_tile(loop=l10, n=2, max_innermost_factor=64, decision=[1, 1])
+l61, l62 = sch.split(loop=l10, factors=[v59, v60], preserve_unit_iters=True, disable_predication=False)
+sch.reorder(l15, l23, l31, l39, l47, l16, l24, l32, l40, l48, l53, l57, l61, l17, l25, l33, l41, l49, l54, l58, l62, l18, l26, l34, l42, l50)
+b63, = sch.get_consumers(block=b0)
+sch.reverse_compute_at(block=b63, loop=l48, preserve_unit_loops=True, index=-1)
+sch.annotate(block_or_loop=b2, ann_key="meta_schedule.parallel", ann_val=96)
+sch.annotate(block_or_loop=b2, ann_key="meta_schedule.vectorize", ann_val=64)
+v64 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=0)
+sch.annotate(block_or_loop=b2, ann_key="meta_schedule.unroll_explicit", ann_val=v64)
+2024-05-20 13:16:48 [INFO] [task_scheduler.cc:170] Design space #2:
+# from tvm.script import ir as I
+# from tvm.script import tir as T
+
+@I.ir_module
+class Module:
+    @T.prim_func
+    def main(p0: T.Buffer((T.int64(1), T.int64(124), T.int64(1), T.int64(1), T.int64(8)), "float32"), p1: T.Buffer((T.int64(16), T.int64(124), T.int64(1), T.int64(1), T.int64(8), T.int64(8)), "float32"), p2: T.Buffer((T.int64(1), T.int64(16), T.int64(1), T.int64(1), T.int64(8)), "float32"), T_relu: T.Buffer((T.int64(1), T.int64(16), T.int64(1), T.int64(1), T.int64(8)), "float32")):
+        T.func_attr({"tir.noalias": T.bool(True)})
+        with T.block("root"):
+            T.reads()
+            T.writes()
+            T.block_attr({"meta_schedule.parallel": 96, "meta_schedule.unroll_explicit": 16, "meta_schedule.vectorize": 64})
+            conv2d_NCHWc = T.alloc_buffer((T.int64(1), T.int64(16), T.int64(1), T.int64(1), T.int64(8)))
+            for n_0, oc_chunk_0, oh_0, ow_0, oc_block_0 in T.grid(T.int64(1), T.int64(1), T.int64(1), T.int64(1), T.int64(2)):
+                for n_1, oc_chunk_1, oh_1, ow_1, oc_block_1, ic_0, kh_0, kw_0, n_2, oc_chunk_2, oh_2, ow_2, oc_block_2, ic_1, kh_1, kw_1, n_3, oc_chunk_3, oh_3, ow_3, oc_block_3 in T.grid(T.int64(1), T.int64(4), T.int64(1), T.int64(1), T.int64(2), T.int64(124), T.int64(1), T.int64(1), T.int64(1), T.int64(1), T.int64(1), T.int64(1), T.int64(1), T.int64(8), T.int64(1), T.int64(1), T.int64(1), T.int64(4), T.int64(1), T.int64(1), T.int64(2)):
+                    with T.block("conv2d_NCHWc"):
+                        v_n = T.axis.spatial(T.int64(1), n_0 + n_1 + n_2 + n_3)
+                        v_oc_chunk = T.axis.spatial(T.int64(16), oc_chunk_0 * T.int64(16) + oc_chunk_1 * T.int64(4) + oc_chunk_2 * T.int64(4) + oc_chunk_3)
+                        v_oh = T.axis.spatial(T.int64(1), oh_0 + oh_1 + oh_2 + oh_3)
+                        v_ow = T.axis.spatial(T.int64(1), ow_0 + ow_1 + ow_2 + ow_3)
+                        v_oc_block = T.axis.spatial(T.int64(8), oc_block_0 * T.int64(4) + oc_block_1 * T.int64(2) + oc_block_2 * T.int64(2) + oc_block_3)
+                        v_ic = T.axis.reduce(T.int64(992), ic_0 * T.int64(8) + ic_1)
+                        v_kh = T.axis.reduce(T.int64(1), kh_0 + kh_1)
+                        v_kw = T.axis.reduce(T.int64(1), kw_0 + kw_1)
+                        T.reads(p0[v_n, v_ic // T.int64(8), v_oh + v_kh, v_ow + v_kw, v_ic % T.int64(8)], p1[v_oc_chunk, v_ic // T.int64(8), v_kh, v_kw, v_ic % T.int64(8), v_oc_block])
+                        T.writes(conv2d_NCHWc[v_n, v_oc_chunk, v_oh, v_ow, v_oc_block])
+                        T.block_attr({"meta_schedule.tiling_structure": "SSRSRS"})
+                        with T.init():
+                            conv2d_NCHWc[v_n, v_oc_chunk, v_oh, v_ow, v_oc_block] = T.float32(0)
+                        conv2d_NCHWc[v_n, v_oc_chunk, v_oh, v_ow, v_oc_block] = conv2d_NCHWc[v_n, v_oc_chunk, v_oh, v_ow, v_oc_block] + p0[v_n, v_ic // T.int64(8), v_oh + v_kh, v_ow + v_kw, v_ic % T.int64(8)] * p1[v_oc_chunk, v_ic // T.int64(8), v_kh, v_kw, v_ic % T.int64(8), v_oc_block]
+                for ax0, ax1, ax2, ax3, ax4 in T.grid(T.int64(1), T.int64(16), T.int64(1), T.int64(1), T.int64(4)):
+                    with T.block("T_relu"):
+                        v_ax0, v_ax1, v_ax2, v_ax3 = T.axis.remap("SSSS", [ax0, ax1, ax2, ax3])
+                        v_ax4 = T.axis.spatial(T.int64(8), oc_block_0 * T.int64(4) + ax4)
+                        T.reads(conv2d_NCHWc[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4], p2[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4])
+                        T.writes(T_relu[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4])
+                        T_relu[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4] = T.max(conv2d_NCHWc[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4] + p2[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4], T.float32(0))
+b0 = sch.get_block(name="conv2d_NCHWc", func_name="main")
+b1 = sch.get_block(name="T_add", func_name="main")
+b2 = sch.get_block(name="root", func_name="main")
+sch.compute_inline(block=b1)
+sch.annotate(block_or_loop=b0, ann_key="meta_schedule.tiling_structure", ann_val="SSRSRS")
+l3, l4, l5, l6, l7, l8, l9, l10 = sch.get_loops(block=b0)
+v11, v12, v13, v14 = sch.sample_perfect_tile(loop=l3, n=4, max_innermost_factor=64, decision=[1, 1, 1, 1])
+l15, l16, l17, l18 = sch.split(loop=l3, factors=[v11, v12, v13, v14], preserve_unit_iters=True, disable_predication=False)
+v19, v20, v21, v22 = sch.sample_perfect_tile(loop=l4, n=4, max_innermost_factor=64, decision=[1, 4, 1, 4])
+l23, l24, l25, l26 = sch.split(loop=l4, factors=[v19, v20, v21, v22], preserve_unit_iters=True, disable_predication=False)
+v27, v28, v29, v30 = sch.sample_perfect_tile(loop=l5, n=4, max_innermost_factor=64, decision=[1, 1, 1, 1])
+l31, l32, l33, l34 = sch.split(loop=l5, factors=[v27, v28, v29, v30], preserve_unit_iters=True, disable_predication=False)
+v35, v36, v37, v38 = sch.sample_perfect_tile(loop=l6, n=4, max_innermost_factor=64, decision=[1, 1, 1, 1])
+l39, l40, l41, l42 = sch.split(loop=l6, factors=[v35, v36, v37, v38], preserve_unit_iters=True, disable_predication=False)
+v43, v44, v45, v46 = sch.sample_perfect_tile(loop=l7, n=4, max_innermost_factor=64, decision=[2, 2, 1, 2])
+l47, l48, l49, l50 = sch.split(loop=l7, factors=[v43, v44, v45, v46], preserve_unit_iters=True, disable_predication=False)
+v51, v52 = sch.sample_perfect_tile(loop=l8, n=2, max_innermost_factor=64, decision=[124, 8])
+l53, l54 = sch.split(loop=l8, factors=[v51, v52], preserve_unit_iters=True, disable_predication=False)
+v55, v56 = sch.sample_perfect_tile(loop=l9, n=2, max_innermost_factor=64, decision=[1, 1])
+l57, l58 = sch.split(loop=l9, factors=[v55, v56], preserve_unit_iters=True, disable_predication=False)
+v59, v60 = sch.sample_perfect_tile(loop=l10, n=2, max_innermost_factor=64, decision=[1, 1])
+l61, l62 = sch.split(loop=l10, factors=[v59, v60], preserve_unit_iters=True, disable_predication=False)
+sch.reorder(l15, l23, l31, l39, l47, l16, l24, l32, l40, l48, l53, l57, l61, l17, l25, l33, l41, l49, l54, l58, l62, l18, l26, l34, l42, l50)
+b63, = sch.get_consumers(block=b0)
+sch.reverse_compute_at(block=b63, loop=l47, preserve_unit_loops=True, index=-1)
+sch.annotate(block_or_loop=b2, ann_key="meta_schedule.parallel", ann_val=96)
+sch.annotate(block_or_loop=b2, ann_key="meta_schedule.vectorize", ann_val=64)
+v64 = sch.sample_categorical(candidates=[0, 16, 64, 512], probs=[0.25, 0.25, 0.25, 0.25], decision=1)
+sch.annotate(block_or_loop=b2, ann_key="meta_schedule.unroll_explicit", ann_val=v64)
+2024-05-20 13:16:51 [INFO] [evolutionary_search.cc:713] Generating candidates......
+2024-05-20 13:16:51 [INFO] [evolutionary_search.cc:715] Picked top 0 candidate(s) from database
+2024-05-20 13:16:52 [INFO] [evolutionary_search.cc:533] Sample-Init-Population summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0x42d6d308)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0x4cb645e8)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0x50646bd8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x4be281c8)]: 0 failure(s)
+2024-05-20 13:16:52 [INFO] [evolutionary_search.cc:723] Sampled 512 candidate(s)
+2024-05-20 13:16:53 [INFO] [evolutionary_search.cc:621] Evolve iter #0 done. Summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0x42d6d308)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0x4cb645e8)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0x50646bd8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x4be281c8)]: 0 failure(s)
+2024-05-20 13:16:54 [INFO] [evolutionary_search.cc:621] Evolve iter #1 done. Summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0x42d6d308)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0x4cb645e8)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0x50646bd8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x4be281c8)]: 0 failure(s)
+2024-05-20 13:16:55 [INFO] [evolutionary_search.cc:621] Evolve iter #2 done. Summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0x42d6d308)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0x4cb645e8)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0x50646bd8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x4be281c8)]: 0 failure(s)
+2024-05-20 13:16:56 [INFO] [evolutionary_search.cc:621] Evolve iter #3 done. Summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0x42d6d308)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0x4cb645e8)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0x50646bd8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x4be281c8)]: 0 failure(s)
+2024-05-20 13:16:56 [INFO] [evolutionary_search.cc:649] Scores of the best 64 candidates:
+[1 : 16]:	0.9999  0.9995  0.9989  0.9985  0.9974  0.9973  0.9966  0.9958  0.9956  0.9956  0.9949  0.9949  0.9938  0.9923  0.9918  0.9917
+[17 : 32]:	0.9916  0.9902  0.9902  0.9900  0.9899  0.9897  0.9896  0.9893  0.9892  0.9891  0.9885  0.9877  0.9875  0.9874  0.9872  0.9867
+[33 : 48]:	0.9866  0.9861  0.9858  0.9856  0.9855  0.9849  0.9849  0.9846  0.9840  0.9839  0.9829  0.9827  0.9819  0.9812  0.9812  0.9809
+[49 : 64]:	0.9801  0.9791  0.9776  0.9775  0.9758  0.9758  0.9757  0.9754  0.9731  0.9724  0.9721  0.9710  0.9707  0.9702  0.9696  0.9694
+2024-05-20 13:16:56 [INFO] [evolutionary_search.cc:727] Got 64 candidate(s) with evolutionary search
+2024-05-20 13:16:56 [INFO] [evolutionary_search.cc:730] Sending 64 candidates(s) for measurement
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #1: GFLOPs: 6.1127. Time: 41.5872 us. Best GFLOPs: 6.1127
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #2: GFLOPs: 6.6528. Time: 38.2108 us. Best GFLOPs: 6.6528
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #3: GFLOPs: 18.4326. Time: 13.7912 us. Best GFLOPs: 18.4326
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #4: GFLOPs: 12.8425. Time: 19.7943 us. Best GFLOPs: 18.4326
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #5: GFLOPs: 14.1316. Time: 17.9887 us. Best GFLOPs: 18.4326
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #6: GFLOPs: 15.5954. Time: 16.3002 us. Best GFLOPs: 18.4326
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #7: GFLOPs: 5.9059. Time: 43.0432 us. Best GFLOPs: 18.4326
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #8: GFLOPs: 45.9697. Time: 5.5299 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #9: GFLOPs: 11.2277. Time: 22.6412 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #10: GFLOPs: 11.0929. Time: 22.9162 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #11: GFLOPs: 10.8776. Time: 23.3698 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #12: GFLOPs: 11.9641. Time: 21.2476 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #13: GFLOPs: 13.6693. Time: 18.5970 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #14: GFLOPs: 10.9105. Time: 23.2995 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #15: GFLOPs: 4.5965. Time: 55.3044 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #16: GFLOPs: 6.1606. Time: 41.2632 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #17: GFLOPs: 19.8542. Time: 12.8037 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #18: GFLOPs: 11.5757. Time: 21.9605 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #19: GFLOPs: 22.9205. Time: 11.0908 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #20: GFLOPs: 4.9289. Time: 51.5748 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #21: GFLOPs: 14.2864. Time: 17.7937 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #22: GFLOPs: 12.5544. Time: 20.2486 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #23: GFLOPs: 10.7099. Time: 23.7358 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #24: GFLOPs: 17.0255. Time: 14.9311 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #25: GFLOPs: 13.5216. Time: 18.8001 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #26: GFLOPs: 6.1990. Time: 41.0077 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #27: GFLOPs: 27.6006. Time: 9.2102 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #28: GFLOPs: 12.4778. Time: 20.3729 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #29: GFLOPs: 7.1140. Time: 35.7337 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #30: GFLOPs: 11.0369. Time: 23.0326 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #31: GFLOPs: 14.7485. Time: 17.2362 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #32: GFLOPs: 8.2039. Time: 30.9863 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #33: GFLOPs: 8.9293. Time: 28.4690 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #34: GFLOPs: 32.3274. Time: 7.8635 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #35: GFLOPs: 22.2143. Time: 11.4435 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #36: GFLOPs: 21.4060. Time: 11.8755 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #37: GFLOPs: 11.2067. Time: 22.6836 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #38: GFLOPs: 9.5792. Time: 26.5374 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #39: GFLOPs: 41.0163. Time: 6.1977 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #40: GFLOPs: 7.2998. Time: 34.8241 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #41: GFLOPs: 7.9880. Time: 31.8239 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #42: GFLOPs: 28.4669. Time: 8.9299 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #43: GFLOPs: 8.7538. Time: 29.0398 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #44: GFLOPs: 20.9524. Time: 12.1326 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #45: GFLOPs: 9.2200. Time: 27.5715 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #46: GFLOPs: 16.8558. Time: 15.0813 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #47: GFLOPs: 10.6231. Time: 23.9296 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #48: GFLOPs: 17.2927. Time: 14.7003 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #49: GFLOPs: 32.2760. Time: 7.8761 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #50: GFLOPs: 17.9191. Time: 14.1865 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #51: GFLOPs: 21.0927. Time: 12.0519 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #52: GFLOPs: 19.2008. Time: 13.2395 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #53: GFLOPs: 33.9064. Time: 7.4973 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #54: GFLOPs: 14.9887. Time: 16.9600 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #55: GFLOPs: 19.5729. Time: 12.9877 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #56: GFLOPs: 20.9905. Time: 12.1106 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #57: GFLOPs: 25.6976. Time: 9.8923 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #58: GFLOPs: 21.6107. Time: 11.7631 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #59: GFLOPs: 17.5798. Time: 14.4602 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #60: GFLOPs: 8.8826. Time: 28.6187 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #61: GFLOPs: 9.3332. Time: 27.2370 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #62: GFLOPs: 18.0052. Time: 14.1186 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #63: GFLOPs: 17.9699. Time: 14.1463 us. Best GFLOPs: 45.9697
+2024-05-20 15:31:07 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #64: GFLOPs: 10.7409. Time: 23.6673 us. Best GFLOPs: 45.9697
+2024-05-20 17:52:01 [INFO] [evolutionary_search.cc:713] Generating candidates......
+2024-05-20 17:52:01 [INFO] [evolutionary_search.cc:715] Picked top 64 candidate(s) from database
+2024-05-20 17:52:02 [INFO] [evolutionary_search.cc:533] Sample-Init-Population summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0x42d6d308)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0x4cb645e8)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0x50646bd8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x4be281c8)]: 0 failure(s)
+2024-05-20 17:52:02 [INFO] [evolutionary_search.cc:723] Sampled 448 candidate(s)
+2024-05-20 17:52:04 [INFO] [evolutionary_search.cc:621] Evolve iter #0 done. Summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0x42d6d308)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0x4cb645e8)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0x50646bd8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x4be281c8)]: 0 failure(s)
+2024-05-20 17:52:06 [INFO] [evolutionary_search.cc:621] Evolve iter #1 done. Summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0x42d6d308)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0x4cb645e8)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0x50646bd8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x4be281c8)]: 0 failure(s)
+2024-05-20 17:52:08 [INFO] [evolutionary_search.cc:621] Evolve iter #2 done. Summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0x42d6d308)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0x4cb645e8)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0x50646bd8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x4be281c8)]: 0 failure(s)
+2024-05-20 17:52:10 [INFO] [evolutionary_search.cc:621] Evolve iter #3 done. Summary:
+Postproc #0 [meta_schedule.DisallowDynamicLoop(0x42d6d308)]: 0 failure(s)
+Postproc #1 [meta_schedule.RewriteParallelVectorizeUnroll(0x4cb645e8)]: 0 failure(s)
+Postproc #2 [meta_schedule.RewriteReductionBlock(0x50646bd8)]: 0 failure(s)
+Postproc #3 [meta_schedule.RewriteLayout(0x4be281c8)]: 0 failure(s)
+2024-05-20 17:52:12 [INFO] [evolutionary_search.cc:649] Scores of the best 64 candidates:
+[1 : 16]:	0.9651  0.9606  0.9386  0.9303  0.9084  0.9060  0.9059  0.9058  0.9024  0.9019  0.8973  0.8971  0.8966  0.8858  0.8847  0.8827
+[17 : 32]:	0.8780  0.8774  0.8763  0.8706  0.8699  0.8686  0.8667  0.8652  0.8589  0.8559  0.8525  0.8519  0.8505  0.8450  0.8423  0.8365
+[33 : 48]:	0.8347  0.8332  0.8311  0.8285  0.8283  0.8280  0.8272  0.8245  0.8243  0.8238  0.8236  0.8231  0.8228  0.8223  0.8211  0.8184
+[49 : 64]:	0.8176  0.8151  0.8151  0.8140  0.8126  0.8124  0.8122  0.8113  0.8102  0.8088  0.8064  0.8062  0.8060  0.8043  0.8042  0.7998
+2024-05-20 17:52:12 [INFO] [evolutionary_search.cc:727] Got 64 candidate(s) with evolutionary search
+2024-05-20 17:52:12 [INFO] [evolutionary_search.cc:730] Sending 64 candidates(s) for measurement
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #65: GFLOPs: 15.8940. Time: 15.9939 us. Best GFLOPs: 45.9697
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #66: GFLOPs: 46.0771. Time: 5.5170 us. Best GFLOPs: 46.0771
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #67: GFLOPs: 55.2644. Time: 4.5998 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #68: GFLOPs: 38.5894. Time: 6.5875 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #69: GFLOPs: 37.8436. Time: 6.7173 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #70: GFLOPs: 46.8442. Time: 5.4267 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #71: GFLOPs: 37.6828. Time: 6.7460 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #72: GFLOPs: 25.2368. Time: 10.0729 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #73: GFLOPs: 46.6254. Time: 5.4521 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #74: GFLOPs: 25.2095. Time: 10.0838 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #75: GFLOPs: 36.0175. Time: 7.0579 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #76: GFLOPs: 52.2927. Time: 4.8613 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #77: GFLOPs: 46.6041. Time: 5.4546 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #78: GFLOPs: 45.9807. Time: 5.5286 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #79: GFLOPs: 41.4443. Time: 6.1337 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #80: GFLOPs: 35.3882. Time: 7.1834 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #81: GFLOPs: 44.1224. Time: 5.7614 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #82: GFLOPs: 36.8026. Time: 6.9073 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #83: GFLOPs: 52.1137. Time: 4.8779 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #84: GFLOPs: 22.3065. Time: 11.3962 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #85: GFLOPs: 30.9403. Time: 8.2161 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #86: GFLOPs: 34.0511. Time: 7.4655 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #87: GFLOPs: 35.1585. Time: 7.2303 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #88: GFLOPs: 33.9780. Time: 7.4816 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #89: GFLOPs: 31.9353. Time: 7.9601 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #90: GFLOPs: 25.1379. Time: 10.1125 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #91: GFLOPs: 36.5950. Time: 6.9465 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #92: GFLOPs: 37.6736. Time: 6.7477 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #93: GFLOPs: 31.1343. Time: 8.1649 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #94: GFLOPs: 31.8177. Time: 7.9895 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #95: GFLOPs: 39.0378. Time: 6.5118 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #96: GFLOPs: 34.7253. Time: 7.3205 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #97: GFLOPs: 32.7703. Time: 7.7573 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #98: GFLOPs: 54.7033. Time: 4.6470 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #99: GFLOPs: 48.8787. Time: 5.2008 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #100: GFLOPs: 21.8933. Time: 11.6112 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #101: GFLOPs: 41.6174. Time: 6.1082 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #102: GFLOPs: 27.8084. Time: 9.1414 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #103: GFLOPs: 37.4487. Time: 6.7882 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #104: GFLOPs: 40.7698. Time: 6.2352 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #105: GFLOPs: 43.3445. Time: 5.8648 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #106: GFLOPs: 53.1983. Time: 4.7785 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #107: GFLOPs: 21.5657. Time: 11.7876 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #108: GFLOPs: 44.4250. Time: 5.7222 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #109: GFLOPs: 49.6598. Time: 5.1190 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #110: GFLOPs: 6.4381. Time: 39.4847 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #111: GFLOPs: 42.8958. Time: 5.9262 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #112: GFLOPs: 44.3305. Time: 5.7344 us. Best GFLOPs: 55.2644
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #113: GFLOPs: 56.9137. Time: 4.4665 us. Best GFLOPs: 56.9137
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #114: GFLOPs: 37.4986. Time: 6.7791 us. Best GFLOPs: 56.9137
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #115: GFLOPs: 31.7488. Time: 8.0068 us. Best GFLOPs: 56.9137
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #116: GFLOPs: 38.2387. Time: 6.6479 us. Best GFLOPs: 56.9137
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #117: GFLOPs: 55.7358. Time: 4.5609 us. Best GFLOPs: 56.9137
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #118: GFLOPs: 28.0787. Time: 9.0534 us. Best GFLOPs: 56.9137
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #119: GFLOPs: 29.1573. Time: 8.7185 us. Best GFLOPs: 56.9137
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #120: GFLOPs: 9.2611. Time: 27.4489 us. Best GFLOPs: 56.9137
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #121: GFLOPs: 31.6002. Time: 8.0445 us. Best GFLOPs: 56.9137
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #122: GFLOPs: 37.1713. Time: 6.8388 us. Best GFLOPs: 56.9137
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #123: GFLOPs: 37.1594. Time: 6.8410 us. Best GFLOPs: 56.9137
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #124: GFLOPs: 45.7531. Time: 5.5561 us. Best GFLOPs: 56.9137
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #125: GFLOPs: 37.5748. Time: 6.7654 us. Best GFLOPs: 56.9137
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #126: GFLOPs: 14.8717. Time: 17.0935 us. Best GFLOPs: 56.9137
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #127: GFLOPs: 18.3718. Time: 13.8368 us. Best GFLOPs: 56.9137
+2024-05-20 17:53:58 [INFO] [task_scheduler.cc:131] [Task #0: fused_nn_contrib_conv2d_NCHWc_add_nn_relu] Trial #128: GFLOPs: 9.3335. Time: 27.2361 us. Best GFLOPs: 56.9137

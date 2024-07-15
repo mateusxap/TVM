@@ -41,23 +41,6 @@ x_test = x_test.reshape(10000,32,32,3)
 # model.save("resnet50_cifar10_final.h5")
 model = keras.models.load_model("resnet50_cifar10_final.h5")
 
-
-countImg = 250
-reshaped_data = [data.reshape(1, 32, 32, 3) for data in x_train[:countImg]]
-
-
-input_shape = [1, 32, 32, 3] # [batch, height, width, channels]
-#shape_dict = {"input_input": input_shape}
-shape_dict = {"input_1": input_shape}
-input_name = "input_1"
-model_name = "resnet50_cifar10_final"
-from tvm import relay
-mod, params = relay.frontend.from_keras(model, shape_dict, layout="NHWC") #подгрузка модели
-#print(mod)
-
-target = tvm.target.Target("llvm -mcpu=core-avx2")
-
-
 input_shape = [1, 32, 32, 3]
 shape_dict = {"input_1": input_shape}
 model, params = relay.frontend.from_keras(model, shape_dict, layout="NHWC")
@@ -67,6 +50,10 @@ work_dir = "meta-scheduler"
 
 target = tvm.target.Target("llvm -mcpu=core-avx2 -num-cores 6")
 dev = tvm.cpu(0)
+
+
+countImg = 250
+reshaped_data = [data.reshape(1, 32, 32, 3) for data in x_train[:countImg]]
 
 def evaluate_performance(lib, data_shape, dtype="float32"):
     dev = tvm.cpu()
@@ -97,7 +84,7 @@ def run_tuning(tasks, task_weights, work_dir, n_trials):
     if not os.path.exists(work_dir):
         os.mkdir(work_dir)
     print("Begin tuning...")    
-    evaluator_config = ms.runner.config.EvaluatorConfig(repeat=1, min_repeat_ms=100)
+    evaluator_config = ms.runner.config.EvaluatorConfig(number=1, repeat=10, enable_cpu_cache_flush=True);
     database = ms.tune.tune_tasks(
         tasks=tasks,
         task_weights=task_weights,
@@ -108,12 +95,14 @@ def run_tuning(tasks, task_weights, work_dir, n_trials):
         builder=ms.builder.LocalBuilder(),
         runner=ms.runner.LocalRunner(evaluator_config=evaluator_config),
     )
-    
+
+
 tasks, task_weights = extract_tasks(model, target, params, strategy_name)
+n_trials = len(tasks) * 64 *4#*2
+run_tuning(tasks, task_weights, work_dir, n_trials)
 
 # %%time
-n_trials = len(tasks) * 64 *2
-run_tuning(tasks, task_weights, work_dir, n_trials)
+
 # database = ms.database.JSONDatabase(f"{work_dir}/database_workload.json",
 #                                     f"{work_dir}/database_tuning_record.json",
 #                                     allow_missing=False)
