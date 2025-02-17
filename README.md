@@ -3,8 +3,6 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Учебный проект ItLab: Ускорение инференса нейронных сетей с помощью Apache TVM</title>
-  <style>
     body {
       font-family: Arial, sans-serif;
       margin: 1in;
