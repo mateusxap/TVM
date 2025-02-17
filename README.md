@@ -3,31 +3,6 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-    body {
-      font-family: Arial, sans-serif;
-      margin: 1in;
-      line-height: 1.6;
-    }
-    h1, h2, h3 {
-      color: #333;
-    }
-    ul {
-      margin-left: 20px;
-    }
-    .flex-container {
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-      margin-bottom: 10px;
-    }
-    .flex-item {
-      flex: 1;
-      min-width: 300px;
-    }
-    .center {
-      text-align: center;
-    }
-  </style>
 </head>
 <body>
   <h1>Учебный проект ItLab: Ускорение инференса нейронных сетей с помощью Apache TVM</h1>
