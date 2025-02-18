@@ -14,31 +14,13 @@ from tvm.contrib import graph_executor
 import multiprocessing
 from tvm import meta_schedule as ms
 
-# with open('cifar10.pkl', 'rb') as file:
-#     x_train, y_train, x_test, y_test = pickle.load(file)
-
-
 
 (x_train, y_train), (x_test, y_test) = cifar10.load_data() #(num_samples, 32, 32, 3)
 y_train = to_categorical(y_train)
 y_test = to_categorical(y_test)
 x_train = x_train.reshape(50000,32,32,3)
 x_test = x_test.reshape(10000,32,32,3)
-# print(x_train.shape)
-# print(x_test.shape)
-# model = ResNet50(
-#     include_top=True,
-#     weights=None,
-#     input_tensor=None,
-#     input_shape=(32, 32, 3),
-#     pooling=None,
-#     classes=10,
-# )
 
-# model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
-# # #model.summary()
-# # #model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=30)
-# model.save("resnet50_cifar10_final.h5")
 model = keras.models.load_model("resnet50_cifar10_final.h5")
 
 input_shape = [1, 32, 32, 3]
@@ -100,25 +82,3 @@ def run_tuning(tasks, task_weights, work_dir, n_trials):
 tasks, task_weights = extract_tasks(model, target, params, strategy_name)
 n_trials = len(tasks) * 64 *4#*2
 run_tuning(tasks, task_weights, work_dir, n_trials)
-
-# %%time
-
-# database = ms.database.JSONDatabase(f"{work_dir}/database_workload.json",
-#                                     f"{work_dir}/database_tuning_record.json",
-#                                     allow_missing=False)
-
-# with tvm.transform.PassContext(opt_level=4):
-#     lib = ms.relay_integration.compile_relay(database, mod, target, params)
-#     print("Optimized mode:")
-#     collect_per_layer_stat(lib, dev)
-
-# tasks, task_weights = extract_tasks(lib, target, params, strategy_name)
-
-# n_trials = len(tasks) * 64 #*2
-
-# run_tuning(tasks, task_weights, work_dir, 513)
-
-# evaluate(lib, input_shape, work_dir, target)
-
-# print("Default mode:")
-# collect_per_layer_stat(tvm_lib, dev)

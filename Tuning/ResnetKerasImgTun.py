@@ -18,85 +18,19 @@ from keras.applications.imagenet_utils import preprocess_input
 import multiprocessing
 from tvm import meta_schedule as ms
 
-
 import os
-#n01632777 акселотли
-# folder_path = "imagenet_validation/n01440764"
-# image_files = [file for file in os.listdir(folder_path) if file.lower().endswith(('.jpg', '.png', '.jpeg'))]
-# print(image_files)
-
-# all_images = []
-# countImg = 50
-# for img_name in image_files:
-#     img_path = f'imagenet_validation/n01440764/{img_name}'
-#     img = image.load_img(img_path,target_size=(224,224))
-#     x = image.img_to_array(img)
-#     #x = np.expand_dims(x,axis=0) #(num_samples, 224, 224, 3) нужно если по одной
-#     x = preprocess_input(x)
-#     all_images.append(x)
-
-# x_data = np.array(all_images)
-# print(x_data.shape)
-
-# model = ResNet50(
-#     weights="imagenet",
-# )
-
-# model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
-# model.summary()
-# #model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=30)
-# model.save("resnet50_imgnet.h5")
-model = keras.models.load_model("resnet50_imgnet.h5")
-
-#print(x_train[:50].shape)
-# print("Prediction: ", np.argmax(model.predict(x_data), axis=1))
-#print("Labels:     ", np.argmax(y_train[:50], axis=1))
-#Замер времени
-
-# reshaped_data = [data.reshape(1, 224, 224, 3) for data in x_data]
-# predictions = []
-# start_time = time.time()
-# for data in reshaped_data:
-#     # делайте что-то с каждым подтензором
-#     #print(chunk_tensor.size())
-#     predictions.append(model.predict(data))
-# end_time = time.time()
-# inference_time_keras = end_time - start_time
-# print("Время инференса модели Keras: {} секунд".format(inference_time_keras))
-# print ("FPS: ", countImg/inference_time_keras)
-
-# predictions = np.array(predictions)
-# predictions = np.array(predictions).reshape((countImg, 1000))
-
-# print("Prediction: ", np.argmax(predictions, axis=1))
-
-# start_time = time.time()
-# predictions = model.predict(x_data, batch_size=1) #поправил batch_size
-# end_time = time.time()
-# inference_time_keras = end_time - start_time
-# print("Время инференса модели Keras: {} секунд".format(inference_time_keras))
-# print ("FPS: ", countImg/inference_time_keras)
-
-
 
 input_shape = [1, 224, 224, 3] # [batch, height, width, channels]
-#shape_dict = {"input_input": input_shape}
 shape_dict = {"input_1": input_shape}
 from tvm import relay
 mod, params = relay.frontend.from_keras(model, shape_dict, layout="NHWC") #подгрузка модели
-#print(mod)
-
 
 strategy_name = "evolutionary"
 work_dir = "meta-scheduler-keras-img"
 
 target = tvm.target.Target("llvm -mcpu=core-avx2 -num-cores 6")
 dev = tvm.cpu(0)
-
-
 countImg = 250
-
-
 def evaluate_performance(lib, data_shape, dtype="float32"):
     dev = tvm.cpu()
     data_tvm = tvm.nd.array((np.random.uniform(size=data_shape)).astype(dtype))

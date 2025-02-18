@@ -53,25 +53,6 @@ for i in range(countImg):
     trainsetInList.append(data)
 
 
-
-# # итерация по подмассивам
-# predictions = []
-# start_time = time.time()
-# for pic in trainsetInList[:countImg]:    
-#     # делайте что-то с каждым подтензором
-#     #print(chunk_tensor.size())
-#     out = model(pic)
-#     predictions.append(out)
-# end_time = time.time()
-# inference_time_torch = end_time - start_time
-# print("Время инференса модели PyTorch: {} секунд".format(inference_time_torch))
-# print ("FPS: ", countImg/inference_time_torch)
-
-# predictions = [out.detach().numpy() for out in predictions]
-# predictions = np.array(predictions).reshape((countImg, 1000))
-
-# print("Prediction: ", np.argmax(predictions, axis=1))
-
 def evaluate_performance(lib, data_shape, dtype="float32"):
     dev = tvm.cpu()
     data_tvm = tvm.nd.array((np.random.uniform(size=data_shape)).astype(dtype))
@@ -129,31 +110,3 @@ dev = tvm.cpu(0)
 tasks, task_weights = extract_tasks(mod, target, params, strategy_name)
 n_trials = len(tasks) * 64 *3#*2
 run_tuning(tasks, task_weights, work_dir, n_trials)
-
-
-
-
-# input_name = "input0"
-# shape_list = [(input_name, input_shape)]
-# mod, params = relay.frontend.from_pytorch(scripted_model, shape_list)
-# print(mod)
-
-
-# target = tvm.target.Target("llvm -mcpu=core-avx2")
-# #target = tvm.target.Target("llvm")
-# dev = tvm.cpu(0)
-
-# with tvm.transform.PassContext(opt_level=3): #проводим тесты над нейросетью в tvm //    tvm_model(data.reshape(1, 28, 28, 1)).numpy()[0]
-#     tvm_model = relay.build_module.create_executor("graph", mod, dev, target, params).evaluate()
-
-# trainsetInList_np = [pic.numpy() for pic in trainsetInList]
-# results = []
-
-# #Проводим инференс над измененными данными
-# start_time_tvm = time.time()
-# for data in trainsetInList_np:
-#     results.append(tvm_model(data).numpy()[0])
-# end_time_tvm = time.time()
-# inference_time_tvm = end_time_tvm - start_time_tvm
-# print("Время инференса модели TVM: {} секунд".format(inference_time_tvm))
-# print ("FPS: ", countImg/inference_time_tvm)

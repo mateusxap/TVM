@@ -24,7 +24,6 @@ input_shape = [1, 3, 224, 224]
 input_data = torch.randn(input_shape)
 scripted_model = torch.jit.trace(model, input_data).eval()
 
-
 all_images = []
 from PIL import Image
 countImg = 50
@@ -45,7 +44,6 @@ for img_name in image_files:
     img = my_preprocess(img)
     imp_np = img.numpy()
     all_images.append(imp_np)
-    #img = np.expand_dims(img, 0)
 
 x_data_np = np.array(all_images)
 x_data_t = torch.from_numpy(x_data_np)
@@ -55,8 +53,6 @@ chunks = x_data_t.chunk(x_data_t.size(0), dim=0)
 predictions = []
 start_time = time.time()
 for chunk_tensor in chunks:
-    # делайте что-то с каждым подтензором
-    #print(chunk_tensor.size())
     out = model(chunk_tensor)
     predictions.append(out)
 end_time = time.time()
@@ -71,13 +67,10 @@ input_name = "input0"
 shape_list = [(input_name, input_shape)]
 mod, params = relay.frontend.from_pytorch(scripted_model, shape_list)
 
-# Компиляция и инференс с помощью TVM
-#target = tvm.target.Target("llvm -mcpu=core-avx2")
 target = tvm.target.Target("llvm")
 
 dev = tvm.cpu(0)
 
-#with tvm.transform.PassContext(opt_level=3):
 tvm_model = relay.build_module.create_executor("graph", mod, dev, target, params).evaluate()
 
 reshaped_data = [data.reshape(1, 3, 224, 224) for data in x_data_np]
@@ -109,57 +102,6 @@ print("FPS: ", countImg / inference_time_tvm)
 work_dir = "meta-scheduler-torch-densenet-img"
 
 strategy_name = "evolutionary"
-
-# target = tvm.target.Target("llvm -mcpu=core-avx2 -num-cores 6")
-# dev = tvm.cpu(0)
-
-
-
-# def evaluate_performance(lib, data_shape, dtype="float32"):
-#     dev = tvm.cpu()
-#     data_tvm = tvm.nd.array((np.random.uniform(size=data_shape)).astype(dtype))
-#     module = graph_executor.GraphModule(lib["default"](dev))
-#     module.set_input('input_input', data_tvm)
-
-#     print("Evaluate inference time cost...")
-#     print(module.benchmark(dev, number=100, repeat=3))
-    
-# def extract_tasks(mod, target, params, strategy):
-#     print("Extract tasks...")
-#     extracted_tasks = ms.relay_integration.extract_tasks(
-#         mod, target, params
-#     )
-#     assert(len(extracted_tasks) > 0)
-    
-#     tasks, task_weights = ms.relay_integration.extracted_tasks_to_tune_contexts(
-#         extracted_tasks, work_dir, strategy=strategy
-#     )
-
-#     for idx, task in enumerate(tasks):
-#         print("Task: %d, desc: %s" % (idx, task.task_name))
-
-#     return tasks, task_weights
-
-# def run_tuning(tasks, task_weights, work_dir, n_trials):
-#     if not os.path.exists(work_dir):
-#         os.mkdir(work_dir)
-#     print("Begin tuning...")    
-#     evaluator_config = ms.runner.config.EvaluatorConfig(number=1, repeat=10, enable_cpu_cache_flush=True);
-#     database = ms.tune.tune_tasks(
-#         tasks=tasks,
-#         task_weights=task_weights,
-#         work_dir=work_dir,
-#         max_trials_global=n_trials,
-#         num_trials_per_iter=64,
-#         max_trials_per_task=256,
-#         builder=ms.builder.LocalBuilder(),
-#         runner=ms.runner.LocalRunner(evaluator_config=evaluator_config),
-#     )
-
-
-# tasks, task_weights = extract_tasks(mod, target, params, strategy_name)
-# n_trials = len(tasks) * 64 * 3 // 2 
-# run_tuning(tasks, task_weights, work_dir, n_trials)
 
 database = ms.database.JSONDatabase(f"{work_dir}/database_workload.json",
                                     f"{work_dir}/database_tuning_record.json",

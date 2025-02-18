@@ -97,11 +97,6 @@ inference_time_tvm = end_time_tvm - start_time_tvm
 print("Время инференса модели TVM: {} секунд".format(inference_time_tvm))
 print ("FPS: ", countImg/inference_time_tvm)
 
-
-
-
-
-
 target = tvm.target.Target("llvm -mcpu=core-avx2")
 
 
@@ -119,24 +114,6 @@ database = ms.database.JSONDatabase(f"{work_dir}/database_workload.json",
                                     allow_missing=False)
 
 
-# results = []
-# start_time_tvm = time.time()
-# for data in reshaped_data:
-#     results.append(lib(data).numpy()[0])
-# end_time_tvm = time.time()
-# inference_time_tvm = end_time_tvm - start_time_tvm
-# print("Время инференса модели TVM c тюннингом: {} секунд".format(inference_time_tvm))
-# print ("FPS: ", countImg/inference_time_tvm)
-
-# ????????
-# results = []
-# start_time_tvm = time.time()
-# for data in reshaped_data:
-#     results.append(ms_mod(data).numpy()[0])
-# end_time_tvm = time.time()
-# inference_time_tvm = end_time_tvm - start_time_tvm
-# print("Время инференса модели TVM c тюннингом: {} секунд".format(inference_time_tvm))
-# print ("FPS: ", countImg/inference_time_tvm)
 with tvm.transform.PassContext(opt_level=3):
     lib = ms.relay_integration.compile_relay(database, mod, target, params)
     print("Optimized mode:")
@@ -177,8 +154,6 @@ print ("FPS: ", countImg/inference_time_tvm)
 
 tvm_model = relay.build_module.create_executor("graph", mod, dev, target, params).evaluate()
 
-#print(x_data.shape)
-#reshaped_data = [data.reshape(1, 224, 224, 3) for data in x_data]
 results = []
 print("2")
 #Проводим инференс над измененными данными
@@ -208,58 +183,3 @@ end_time_tvm = time.time()
 inference_time_tvm = end_time_tvm - start_time_tvm
 print("Время инференса модели TVM c тюннингом: {} секунд".format(inference_time_tvm))
 print ("FPS: ", countImg/inference_time_tvm)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# def evaluate_performance(lib):
-#     dev = tvm.cpu()
-#     module = graph_executor.GraphModule(lib["default"](dev))
-
-#     print("Evaluate inference time cost...")
-#     print(module.benchmark(dev, number=10, repeat=3))
-
-
-
-# target = tvm.target.Target("llvm")
-# dev = tvm.cpu(0)
-# #with tvm.transform.PassContext(opt_level=3):
-# tvm_model = relay.build(mod, target=target, params=params)
-
-# evaluate_performance(tvm_model)
-# print("Без оптимизации")
-
-# target = tvm.target.Target("llvm -mcpu=core-avx2")
-# with tvm.transform.PassContext(opt_level=3):
-#     tvm_model = relay.build(mod, target=target, params=params)
-
-# evaluate_performance(tvm_model)
-# print("С оптимизацией")

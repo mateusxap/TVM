@@ -41,8 +41,6 @@ print ("FPS: ", countImg/inference_time_keras)
 input_shape = [1, 32, 32, 3]
 shape_dict = {"input_1": input_shape}
 mod, params = relay.frontend.from_keras(model, shape_dict, layout="NHWC")
-#target = tvm.target.Target("llvm -mcpu=skylake-avx512")
-#target = tvm.target.Target("llvm -mcpu=core-avx2")
 target = tvm.target.Target("llvm")
 dev = tvm.cpu(0)
 

@@ -3,13 +3,11 @@ import time
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import warnings
 import pickle
-#warnings.filterwarnings("ignore")
 from tvm.contrib import graph_executor
 import tvm
 from tvm import relay
 import numpy as np
 from tvm.contrib.download import download_testdata
-# PyTorch imports
 import torch
 import torchvision
 from torchvision import transforms
@@ -18,7 +16,6 @@ from torchvision import transforms
 model_name = "resnet50"
 model = getattr(torchvision.models, model_name)(pretrained=False)
 model = model.eval()
-
 
 input_shape = [1, 3, 32, 32]
 input_data = torch.randn(input_shape)
@@ -56,8 +53,6 @@ for i in range(countImg):
 predictions = []
 start_time = time.time()
 for pic in trainsetInList[:countImg]:    
-    # делайте что-то с каждым подтензором
-    #print(chunk_tensor.size())
     out = model(pic)
     predictions.append(out)
 end_time = time.time()
@@ -77,10 +72,9 @@ print(mod)
 
 
 target = tvm.target.Target("llvm -mcpu=core-avx2")
-#target = tvm.target.Target("llvm")
 dev = tvm.cpu(0)
 
-with tvm.transform.PassContext(opt_level=3): #проводим тесты над нейросетью в tvm //    tvm_model(data.reshape(1, 28, 28, 1)).numpy()[0]
+with tvm.transform.PassContext(opt_level=3):
     tvm_model = relay.build_module.create_executor("graph", mod, dev, target, params).evaluate()
 
 trainsetInList_np = [pic.numpy() for pic in trainsetInList]
@@ -94,28 +88,3 @@ end_time_tvm = time.time()
 inference_time_tvm = end_time_tvm - start_time_tvm
 print("Время инференса модели TVM: {} секунд".format(inference_time_tvm))
 print ("FPS: ", countImg/inference_time_tvm)
-
-
-# def evaluate_performance(lib):
-#     dev = tvm.cpu()
-#     module = graph_executor.GraphModule(lib["default"](dev))
-
-#     print("Evaluate inference time cost...")
-#     print(module.benchmark(dev, number=10, repeat=3))
-
-
-
-# target = tvm.target.Target("llvm")
-# dev = tvm.cpu(0)
-# #with tvm.transform.PassContext(opt_level=3):
-# tvm_model = relay.build(mod, target=target, params=params)
-
-# evaluate_performance(tvm_model)
-# print("Без оптимизации")
-
-# target = tvm.target.Target("llvm -mcpu=core-avx2")
-# with tvm.transform.PassContext(opt_level=3):
-#     tvm_model = relay.build(mod, target=target, params=params)
-
-# evaluate_performance(tvm_model)
-# print("С оптимизацией")
